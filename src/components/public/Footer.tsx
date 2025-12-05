@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
+import universoItLogo from "@/assets/universo-it-logo.png";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -55,11 +56,12 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-                <span className="font-display text-lg font-bold text-primary-foreground">U</span>
-              </div>
-              <span className="font-display text-xl font-bold">Universo IT</span>
+            <Link to="/" className="flex items-center">
+              <img 
+                src={universoItLogo} 
+                alt="Universo IT" 
+                className="h-10 w-auto"
+              />
             </Link>
             <p className="text-sm text-muted-foreground">
               O seu portal de notícias sobre tecnologia, inovação e o futuro digital.
