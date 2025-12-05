@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdImageUpload } from "@/components/admin/AdImageUpload";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Eye, MousePointer, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, MousePointer, Loader2, ExternalLink, BarChart3 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -236,13 +237,20 @@ export default function Advertisements() {
               Gerir anúncios e banners do site
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Anúncio
+          <div className="flex items-center gap-2">
+            <Link to="/admin/anuncios/estatisticas">
+              <Button variant="outline">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Estatísticas
               </Button>
-            </DialogTrigger>
+            </Link>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Anúncio
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -419,6 +427,7 @@ export default function Advertisements() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}

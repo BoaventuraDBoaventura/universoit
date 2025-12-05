@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_statistics: {
+        Row: {
+          ad_id: string
+          clicks: number
+          created_at: string
+          date: string
+          id: string
+          impressions: number
+        }
+        Insert: {
+          ad_id: string
+          clicks?: number
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number
+        }
+        Update: {
+          ad_id?: string
+          clicks?: number
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_statistics_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advertisements: {
         Row: {
           ad_type: Database["public"]["Enums"]["ad_type"]
