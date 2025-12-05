@@ -62,6 +62,7 @@ interface Advertisement {
   end_date: string | null;
   impressions: number | null;
   clicks: number | null;
+  popup_frequency_hours: number | null;
   created_at: string;
 }
 
@@ -91,6 +92,7 @@ const defaultFormData = {
   is_active: true,
   start_date: "",
   end_date: "",
+  popup_frequency_hours: 24,
 };
 
 export default function Advertisements() {
@@ -124,6 +126,7 @@ export default function Advertisements() {
         is_active: formData.is_active,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
+        popup_frequency_hours: formData.position === "popup" ? formData.popup_frequency_hours : null,
       };
 
       if (editingAd) {
@@ -202,6 +205,7 @@ export default function Advertisements() {
         is_active: ad.is_active ?? true,
         start_date: ad.start_date?.split("T")[0] || "",
         end_date: ad.end_date?.split("T")[0] || "",
+        popup_frequency_hours: ad.popup_frequency_hours ?? 24,
       });
     } else {
       setEditingAd(null);
@@ -351,6 +355,36 @@ export default function Advertisements() {
                     position={formData.position}
                   />
                 </div>
+
+                {/* Configuração de frequência do popup */}
+                {formData.position === "popup" && (
+                  <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
+                    <Label htmlFor="popup_frequency">Frequência do Popup</Label>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Intervalo mínimo (em horas) entre exibições para o mesmo utilizador
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="popup_frequency"
+                        type="number"
+                        min={1}
+                        max={720}
+                        value={formData.popup_frequency_hours}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            popup_frequency_hours: parseInt(e.target.value) || 24,
+                          }))
+                        }
+                        className="w-24"
+                      />
+                      <span className="text-sm text-muted-foreground">horas</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ex: 24h = 1x por dia, 168h = 1x por semana
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div>
