@@ -96,15 +96,15 @@ export default function Article() {
     ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: pt })
     : "";
 
-  const shareUrl = window.location.href;
+  const siteUrl = window.location.origin;
+  const articleUrl = `${siteUrl}/artigo/${article.slug}`;
+  const shareUrl = encodeURIComponent(articleUrl);
   const shareTitle = encodeURIComponent(article.title);
 
   // Estimate reading time (avg 200 words per minute)
   const wordCount = article.content?.split(/\s+/).length || 0;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  const siteUrl = window.location.origin;
-  const articleUrl = `${siteUrl}/artigo/${article.slug}`;
   const ogImage = article.featured_image || `${siteUrl}/favicon.png`;
   const ogDescription = article.excerpt || "Leia este artigo no Universo IT";
 
