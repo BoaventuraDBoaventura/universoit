@@ -3,24 +3,55 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AuthProvider } from "@/contexts/AuthContext";
+
+// Public pages
+import Home from "./pages/Home";
+import Article from "./pages/Article";
+import Category from "./pages/Category";
+import Search from "./pages/Search";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
+// Admin pages
+import Dashboard from "./pages/admin/Dashboard";
+import Articles from "./pages/admin/Articles";
+import ArticleEditor from "./pages/admin/ArticleEditor";
+import Categories from "./pages/admin/Categories";
+import Tags from "./pages/admin/Tags";
+import Newsletter from "./pages/admin/Newsletter";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/artigo/:slug" element={<Article />} />
+            <Route path="/categoria/:slug" element={<Category />} />
+            <Route path="/busca" element={<Search />} />
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<Dashboard />} />
+            <Route path="/admin/artigos" element={<Articles />} />
+            <Route path="/admin/artigos/:id" element={<ArticleEditor />} />
+            <Route path="/admin/categorias" element={<Categories />} />
+            <Route path="/admin/tags" element={<Tags />} />
+            <Route path="/admin/newsletter" element={<Newsletter />} />
+            
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
