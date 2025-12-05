@@ -26,6 +26,7 @@ import Comments from "./pages/admin/Comments";
 import Newsletter from "./pages/admin/Newsletter";
 import Advertisements from "./pages/admin/Advertisements";
 import AdStatistics from "./pages/admin/AdStatistics";
+import Users from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/admin/newsletter" element={<Newsletter />} />
             <Route path="/admin/anuncios" element={<Advertisements />} />
             <Route path="/admin/anuncios/estatisticas" element={<AdStatistics />} />
+            <Route path="/admin/utilizadores" element={<Users />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
