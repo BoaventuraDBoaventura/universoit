@@ -97,8 +97,11 @@ export function Footer() {
               <Link to="/contacto" className="text-sm text-muted-foreground hover:text-foreground">
                 Contacto
               </Link>
-              <Link to="/privacidade" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/politica-de-privacidade" className="text-sm text-muted-foreground hover:text-foreground">
                 Política de Privacidade
+              </Link>
+              <Link to="/termos-de-uso" className="text-sm text-muted-foreground hover:text-foreground">
+                Termos de Uso
               </Link>
             </nav>
           </div>
