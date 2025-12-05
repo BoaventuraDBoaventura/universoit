@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -300,24 +301,13 @@ export default function ArticleEditor() {
               <CardHeader>
                 <CardTitle>Imagem de Capa</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
+              <CardContent>
+                <ImageUpload
                   value={formData.featured_image}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      featured_image: e.target.value,
-                    }))
+                  onChange={(url) =>
+                    setFormData((prev) => ({ ...prev, featured_image: url }))
                   }
-                  placeholder="URL da imagem"
                 />
-                {formData.featured_image && (
-                  <img
-                    src={formData.featured_image}
-                    alt="Preview"
-                    className="aspect-video w-full rounded-lg object-cover"
-                  />
-                )}
               </CardContent>
             </Card>
           </div>
