@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { User, Clock, TrendingUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
-import { AdBanner } from "./AdBanner";
+import { SmartAdBanner } from "./SmartAdBanner";
 
 interface ArticleSidebarProps {
   relatedArticles: Article[];
@@ -139,7 +139,7 @@ export function ArticleSidebar({ relatedArticles, author, category }: ArticleSid
       )}
 
       {/* Sidebar Ad */}
-      <AdBanner position="sidebar" className="shadow-sm" />
+      <SmartAdBanner position="sidebar" className="shadow-sm" />
 
       {/* Newsletter CTA */}
       <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
