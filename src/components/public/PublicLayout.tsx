@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { AdBanner } from "./AdBanner";
+import { SmartAdBanner } from "./SmartAdBanner";
 import { PopupAd } from "./PopupAd";
 
 interface PublicLayoutProps {
@@ -14,7 +14,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <Header />
       {/* Header Ad Banner */}
       <div className="container py-3">
-        <AdBanner position="header" className="mx-auto max-w-4xl" />
+        <SmartAdBanner position="header" className="mx-auto max-w-4xl" />
       </div>
       <main className="flex-1">{children}</main>
       <Footer />
