@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,24 +201,25 @@ export default function ArticleEditor() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, excerpt: e.target.value }))
                     }
-                    placeholder="Breve descrição do artigo..."
+                    placeholder="Breve descrição do artigo (aparece na listagem e meta description)..."
                     rows={3}
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="content">Conteúdo (HTML)</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, content: e.target.value }))
-                    }
-                    placeholder="<p>Escreva o conteúdo do artigo aqui...</p>"
-                    rows={15}
-                    className="font-mono text-sm"
-                  />
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Conteúdo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RichTextEditor
+                  value={formData.content}
+                  onChange={(content) =>
+                    setFormData((prev) => ({ ...prev, content }))
+                  }
+                  placeholder="Escreva o conteúdo do artigo..."
+                />
               </CardContent>
             </Card>
           </div>
