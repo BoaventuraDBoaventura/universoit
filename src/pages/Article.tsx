@@ -4,6 +4,7 @@ import { useArticleBySlug, usePublishedArticles } from "@/hooks/useArticles";
 import { ArticleSidebar } from "@/components/public/ArticleSidebar";
 import { ArticleCard } from "@/components/public/ArticleCard";
 import { CommentList } from "@/components/public/CommentList";
+import { AdBanner } from "@/components/public/AdBanner";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, Eye, ArrowLeft, Share2, Twitter, Facebook, Linkedin, Clock, Bookmark, Tag } from "lucide-react";
@@ -225,6 +226,11 @@ export default function Article() {
                   ))}
                 </div>
               )}
+
+              {/* In-Article Ad */}
+              <div className="my-10">
+                <AdBanner position="in_article" />
+              </div>
 
               {/* Share Section */}
               <div className="mt-12 rounded-xl border border-border/50 bg-card/50 p-6">

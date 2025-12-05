@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import { AdBanner } from "./AdBanner";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -10,6 +11,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      {/* Header Ad Banner */}
+      <div className="container py-3">
+        <AdBanner position="header" className="mx-auto max-w-4xl" />
+      </div>
       <main className="flex-1">{children}</main>
       <Footer />
     </div>

@@ -359,6 +359,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_ad_clicks: { Args: { ad_id: string }; Returns: undefined }
+      increment_ad_impressions: { Args: { ad_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_editor_or_admin: { Args: never; Returns: boolean }
     }
