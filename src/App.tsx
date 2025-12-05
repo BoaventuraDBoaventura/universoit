@@ -12,6 +12,7 @@ import Category from "./pages/Category";
 import Search from "./pages/Search";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/busca" element={<Search />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+            <Route path="/termos-de-uso" element={<TermsOfUse />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<Dashboard />} />
