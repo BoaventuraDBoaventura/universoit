@@ -5,6 +5,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
@@ -31,7 +32,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Download, MoreHorizontal, Shield, UserCog, User } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Download, MoreHorizontal, Shield, UserCog, User, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -48,8 +65,22 @@ interface UserWithRoles {
   roles: AppRole[];
 }
 
+interface CreateUserForm {
+  email: string;
+  password: string;
+  full_name: string;
+  role: AppRole;
+}
+
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateUserForm>({
+    email: "",
+    password: "",
+    full_name: "",
+    role: "user",
+  });
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     userId: string;
@@ -94,6 +125,48 @@ const Users = () => {
       }));
 
       return usersWithRoles;
+    },
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (form: CreateUserForm) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke("create-user", {
+        body: {
+          email: form.email,
+          password: form.password,
+          full_name: form.full_name,
+          role: form.role,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao criar utilizador");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({
+        title: "Utilizador criado",
+        description: "O utilizador foi criado com sucesso.",
+      });
+      setCreateDialogOpen(false);
+      setCreateForm({ email: "", password: "", full_name: "", role: "user" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar utilizador",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -146,6 +219,19 @@ const Users = () => {
       });
     },
   });
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.email || !createForm.password) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Email e password são obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createUserMutation.mutate(createForm);
+  };
 
   const handleRoleChange = (
     userId: string,
@@ -249,10 +335,98 @@ const Users = () => {
               {users?.length || 0} utilizadores registados
             </p>
           </div>
-          <Button onClick={exportToCSV} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Utilizador
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar novo utilizador</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados para criar um novo utilizador no sistema.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Nome completo</Label>
+                    <Input
+                      id="full_name"
+                      value={createForm.full_name}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, full_name: e.target.value })
+                      }
+                      placeholder="João Silva"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, email: e.target.value })
+                      }
+                      placeholder="joao@exemplo.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password *</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={createForm.password}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, password: e.target.value })
+                      }
+                      placeholder="Mínimo 6 caracteres"
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select
+                      value={createForm.role}
+                      onValueChange={(value: AppRole) =>
+                        setCreateForm({ ...createForm, role: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Utilizador</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCreateDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={createUserMutation.isPending}>
+                      {createUserMutation.isPending ? "A criar..." : "Criar utilizador"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button onClick={exportToCSV} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
