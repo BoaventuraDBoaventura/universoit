@@ -60,7 +60,7 @@ export function Footer() {
               <img 
                 src={universoItLogo} 
                 alt="Universo IT" 
-                className="h-10 w-auto"
+                className="h-8 w-auto sm:h-10"
               />
             </Link>
             <p className="text-sm text-muted-foreground">

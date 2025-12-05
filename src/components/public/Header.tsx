@@ -26,11 +26,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center flex-shrink-0">
           <img 
             src={universoItLogo} 
             alt="Universo IT" 
-            className="h-10 w-auto"
+            className="h-7 w-auto sm:h-9 md:h-10"
           />
         </Link>
 
