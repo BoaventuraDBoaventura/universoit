@@ -9,41 +9,26 @@ interface Advertisement {
   title: string;
   image_url: string | null;
   link_url: string | null;
+  popup_frequency_hours: number | null;
 }
 
-// Configurações de frequência
+// Configurações
 const POPUP_STORAGE_KEY = "popup_ad_last_shown";
-const POPUP_FREQUENCY_HOURS = 24; // Mostrar no máximo uma vez a cada 24 horas
 const POPUP_DELAY_MS = 5000; // Atraso de 5 segundos antes de mostrar
+const DEFAULT_FREQUENCY_HOURS = 24;
 
 export function PopupAd() {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [shouldShow, setShouldShow] = useState(false);
 
-  // Verificar se deve mostrar o popup baseado na frequência
-  useEffect(() => {
-    const lastShown = localStorage.getItem(POPUP_STORAGE_KEY);
-    
-    if (lastShown) {
-      const lastShownDate = new Date(lastShown);
-      const hoursSinceLastShown = (Date.now() - lastShownDate.getTime()) / (1000 * 60 * 60);
-      
-      if (hoursSinceLastShown < POPUP_FREQUENCY_HOURS) {
-        return; // Não mostrar se ainda não passou o tempo mínimo
-      }
-    }
-    
-    setShouldShow(true);
-  }, []);
-
+  // Buscar anúncio popup ativo
   const { data: ad } = useQuery({
     queryKey: ["popup-ad"],
     queryFn: async () => {
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("advertisements")
-        .select("id, title, image_url, link_url")
+        .select("id, title, image_url, link_url, popup_frequency_hours")
         .eq("position", "popup")
         .eq("is_active", true)
         .or(`start_date.is.null,start_date.lte.${now}`)
@@ -53,9 +38,27 @@ export function PopupAd() {
       if (error) throw error;
       return data as Advertisement | null;
     },
-    enabled: shouldShow,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Verificar se deve mostrar baseado na frequência configurada
+  const shouldShowPopup = useCallback(() => {
+    if (!ad) return false;
+    
+    const frequencyHours = ad.popup_frequency_hours ?? DEFAULT_FREQUENCY_HOURS;
+    const lastShown = localStorage.getItem(POPUP_STORAGE_KEY);
+    
+    if (lastShown) {
+      const lastShownDate = new Date(lastShown);
+      const hoursSinceLastShown = (Date.now() - lastShownDate.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastShown < frequencyHours) {
+        return false;
+      }
+    }
+    
+    return true;
+  }, [ad]);
 
   const trackImpression = useMutation({
     mutationFn: async (adId: string) => {
@@ -71,7 +74,8 @@ export function PopupAd() {
 
   // Mostrar popup com atraso
   useEffect(() => {
-    if (!ad || !ad.image_url || !shouldShow) return;
+    if (!ad || !ad.image_url) return;
+    if (!shouldShowPopup()) return;
 
     const timer = setTimeout(() => {
       setIsVisible(true);
@@ -80,7 +84,7 @@ export function PopupAd() {
     }, POPUP_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [ad, shouldShow]);
+  }, [ad, shouldShowPopup]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);

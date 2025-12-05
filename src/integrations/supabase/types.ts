@@ -25,6 +25,7 @@ export type Database = {
           impressions: number | null
           is_active: boolean | null
           link_url: string | null
+          popup_frequency_hours: number | null
           position: Database["public"]["Enums"]["ad_position"]
           start_date: string | null
           title: string
@@ -40,6 +41,7 @@ export type Database = {
           impressions?: number | null
           is_active?: boolean | null
           link_url?: string | null
+          popup_frequency_hours?: number | null
           position?: Database["public"]["Enums"]["ad_position"]
           start_date?: string | null
           title: string
@@ -55,6 +57,7 @@ export type Database = {
           impressions?: number | null
           is_active?: boolean | null
           link_url?: string | null
+          popup_frequency_hours?: number | null
           position?: Database["public"]["Enums"]["ad_position"]
           start_date?: string | null
           title?: string
