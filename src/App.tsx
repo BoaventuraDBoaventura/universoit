@@ -22,6 +22,7 @@ import Tags from "./pages/admin/Tags";
 import Comments from "./pages/admin/Comments";
 import Newsletter from "./pages/admin/Newsletter";
 import Advertisements from "./pages/admin/Advertisements";
+import AdStatistics from "./pages/admin/AdStatistics";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin/comentarios" element={<Comments />} />
             <Route path="/admin/newsletter" element={<Newsletter />} />
             <Route path="/admin/anuncios" element={<Advertisements />} />
+            <Route path="/admin/anuncios/estatisticas" element={<AdStatistics />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
