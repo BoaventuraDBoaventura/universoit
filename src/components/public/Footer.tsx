@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AdBanner } from "./AdBanner";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -45,6 +46,11 @@ export function Footer() {
 
   return (
     <footer className="border-t border-border bg-secondary/50">
+      {/* Banner de anúncio no rodapé */}
+      <div className="container py-4">
+        <AdBanner position="footer" className="mx-auto max-w-4xl" />
+      </div>
+      
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
