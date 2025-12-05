@@ -197,6 +197,60 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          article_id: string
+          author_email: string
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          status: Database["public"]["Enums"]["comment_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          author_email: string
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          status?: Database["public"]["Enums"]["comment_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          author_email?: string
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          status?: Database["public"]["Enums"]["comment_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -313,6 +367,7 @@ export type Database = {
       ad_type: "banner" | "sponsored" | "popup"
       app_role: "admin" | "editor" | "user"
       article_status: "draft" | "published" | "scheduled" | "archived"
+      comment_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -444,6 +499,7 @@ export const Constants = {
       ad_type: ["banner", "sponsored", "popup"],
       app_role: ["admin", "editor", "user"],
       article_status: ["draft", "published", "scheduled", "archived"],
+      comment_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
