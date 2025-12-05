@@ -21,6 +21,7 @@ import Categories from "./pages/admin/Categories";
 import Tags from "./pages/admin/Tags";
 import Comments from "./pages/admin/Comments";
 import Newsletter from "./pages/admin/Newsletter";
+import Advertisements from "./pages/admin/Advertisements";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/admin/tags" element={<Tags />} />
             <Route path="/admin/comentarios" element={<Comments />} />
             <Route path="/admin/newsletter" element={<Newsletter />} />
+            <Route path="/admin/anuncios" element={<Advertisements />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
