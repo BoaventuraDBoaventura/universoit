@@ -6,16 +6,32 @@ import { ArticleCard } from "@/components/public/ArticleCard";
 import { CommentList } from "@/components/public/CommentList";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, User, Eye, ArrowLeft, Share2, Twitter, Facebook, Linkedin, Clock, Bookmark } from "lucide-react";
+import { Calendar, User, Eye, ArrowLeft, Share2, Twitter, Facebook, Linkedin, Clock, Bookmark, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow, format } from "date-fns";
 import { pt } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Article() {
   const { slug } = useParams<{ slug: string }>();
   const { data: article, isLoading } = useArticleBySlug(slug || "");
   const { data: allArticles } = usePublishedArticles(10);
+
+  // Fetch article tags
+  const { data: articleTags } = useQuery({
+    queryKey: ["article-tags-public", article?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("article_tags")
+        .select("tag_id, tags(id, name, slug)")
+        .eq("article_id", article!.id);
+      if (error) throw error;
+      return data.map((at) => at.tags).filter(Boolean) as { id: string; name: string; slug: string }[];
+    },
+    enabled: !!article?.id,
+  });
 
   // Filter related articles by same category, excluding current
   const relatedArticles = allArticles
@@ -197,6 +213,18 @@ export default function Article() {
                 className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl"
                 dangerouslySetInnerHTML={{ __html: article.content || "" }}
               />
+
+              {/* Tags */}
+              {articleTags && articleTags.length > 0 && (
+                <div className="mt-8 flex flex-wrap items-center gap-2">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  {articleTags.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
 
               {/* Share Section */}
               <div className="mt-12 rounded-xl border border-border/50 bg-card/50 p-6">
