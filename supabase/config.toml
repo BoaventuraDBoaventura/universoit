@@ -1,1 +1,7 @@
 project_id = "qpljdthnqdatcirkudpc"
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.create-article]
+verify_jwt = false

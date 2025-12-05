@@ -6,6 +6,8 @@ import { ArticleSidebar } from "@/components/public/ArticleSidebar";
 import { ArticleCard } from "@/components/public/ArticleCard";
 import { CommentList } from "@/components/public/CommentList";
 import { AdBanner } from "@/components/public/AdBanner";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { LazyImage } from "@/components/ui/lazy-image";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, Eye, ArrowLeft, Share2, Twitter, Facebook, Linkedin, Clock, Bookmark, Tag } from "lucide-react";
@@ -136,7 +138,9 @@ export default function Article() {
         <meta name="twitter:description" content={ogDescription} />
         <meta name="twitter:image" content={ogImage} />
       </Helmet>
-      
+
+      {/* JSON-LD Structured Data */}
+      <ArticleJsonLd article={article} url={articleUrl} tags={articleTags} />
       <article className="py-8">
         <div className="container">
           {/* Breadcrumb */}
@@ -234,7 +238,7 @@ export default function Article() {
               {/* Featured Image */}
               {article.featured_image && (
                 <figure className="mb-10 overflow-hidden rounded-2xl border border-border/50 shadow-lg">
-                  <img
+                  <LazyImage
                     src={article.featured_image}
                     alt={article.title}
                     className="aspect-video w-full object-cover"
