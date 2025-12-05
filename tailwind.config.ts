@@ -103,7 +103,77 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'hsl(var(--foreground))',
+            h1: {
+              fontFamily: 'Space Grotesk, system-ui, sans-serif',
+              color: 'hsl(var(--foreground))',
+            },
+            h2: {
+              fontFamily: 'Space Grotesk, system-ui, sans-serif',
+              color: 'hsl(var(--foreground))',
+            },
+            h3: {
+              fontFamily: 'Space Grotesk, system-ui, sans-serif',
+              color: 'hsl(var(--foreground))',
+            },
+            h4: {
+              fontFamily: 'Space Grotesk, system-ui, sans-serif',
+              color: 'hsl(var(--foreground))',
+            },
+            p: {
+              color: 'hsl(var(--foreground))',
+            },
+            a: {
+              color: 'hsl(var(--primary))',
+              '&:hover': {
+                color: 'hsl(var(--primary))',
+                opacity: '0.8',
+              },
+            },
+            blockquote: {
+              borderLeftColor: 'hsl(var(--border))',
+              color: 'hsl(var(--muted-foreground))',
+            },
+            code: {
+              backgroundColor: 'hsl(var(--muted))',
+              color: 'hsl(var(--foreground))',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '0.25rem',
+              fontWeight: '400',
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+            pre: {
+              backgroundColor: 'hsl(var(--muted))',
+              color: 'hsl(var(--foreground))',
+            },
+            hr: {
+              borderColor: 'hsl(var(--border))',
+            },
+            strong: {
+              color: 'hsl(var(--foreground))',
+            },
+            li: {
+              color: 'hsl(var(--foreground))',
+            },
+            'ul > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+            'ol > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+          },
+        },
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
