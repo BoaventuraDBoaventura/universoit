@@ -98,8 +98,8 @@ export default function Article() {
 
   const siteUrl = window.location.origin;
   const articleUrl = `${siteUrl}/artigo/${article.slug}`;
-  const shareUrl = encodeURIComponent(articleUrl);
-  const shareTitle = encodeURIComponent(article.title);
+  const encodedUrl = encodeURIComponent(articleUrl);
+  const encodedTitle = encodeURIComponent(article.title);
 
   // Estimate reading time (avg 200 words per minute)
   const wordCount = article.content?.split(/\s+/).length || 0;
@@ -280,7 +280,7 @@ export default function Article() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="gap-2" asChild>
                       <a
-                        href={`https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}`}
+                        href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -290,7 +290,7 @@ export default function Article() {
                     </Button>
                     <Button variant="outline" size="sm" className="gap-2" asChild>
                       <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -300,7 +300,7 @@ export default function Article() {
                     </Button>
                     <Button variant="outline" size="sm" className="gap-2" asChild>
                       <a
-                        href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
+                        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
