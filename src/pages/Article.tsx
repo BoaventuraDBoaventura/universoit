@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { useArticleBySlug, usePublishedArticles } from "@/hooks/useArticles";
 import { ArticleSidebar } from "@/components/public/ArticleSidebar";
@@ -102,8 +103,40 @@ export default function Article() {
   const wordCount = article.content?.split(/\s+/).length || 0;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
+  const siteUrl = window.location.origin;
+  const articleUrl = `${siteUrl}/artigo/${article.slug}`;
+  const ogImage = article.featured_image || `${siteUrl}/favicon.png`;
+  const ogDescription = article.excerpt || "Leia este artigo no Universo IT";
+
   return (
     <PublicLayout>
+      <Helmet>
+        <title>{article.title} | Universo IT</title>
+        <meta name="description" content={ogDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={articleUrl} />
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:site_name" content="Universo IT" />
+        <meta property="og:locale" content="pt_PT" />
+        {article.published_at && (
+          <meta property="article:published_time" content={article.published_at} />
+        )}
+        {article.category && (
+          <meta property="article:section" content={article.category.name} />
+        )}
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={articleUrl} />
+        <meta name="twitter:title" content={article.title} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
+      
       <article className="py-8">
         <div className="container">
           {/* Breadcrumb */}
