@@ -57,9 +57,9 @@ export function Footer() {
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-                <span className="font-display text-lg font-bold text-primary-foreground">T</span>
+                <span className="font-display text-lg font-bold text-primary-foreground">U</span>
               </div>
-              <span className="font-display text-xl font-bold">TechNews</span>
+              <span className="font-display text-xl font-bold">Universo IT</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               O seu portal de notícias sobre tecnologia, inovação e o futuro digital.
@@ -127,7 +127,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} TechNews. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Universo IT. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

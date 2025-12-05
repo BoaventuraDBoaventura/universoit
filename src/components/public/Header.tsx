@@ -27,10 +27,10 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-            <span className="font-display text-lg font-bold text-primary-foreground">T</span>
+            <span className="font-display text-lg font-bold text-primary-foreground">U</span>
           </div>
           <span className="hidden font-display text-xl font-bold sm:inline-block">
-            TechNews
+            Universo IT
           </span>
         </Link>
 
