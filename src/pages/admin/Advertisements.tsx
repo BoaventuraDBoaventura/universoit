@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { AdImageUpload } from "@/components/admin/AdImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -343,11 +343,12 @@ export default function Advertisements() {
 
                 <div className="space-y-2">
                   <Label>Imagem do Anúncio</Label>
-                  <ImageUpload
+                  <AdImageUpload
                     value={formData.image_url}
                     onChange={(url) =>
                       setFormData((prev) => ({ ...prev, image_url: url }))
                     }
+                    position={formData.position}
                   />
                 </div>
 
