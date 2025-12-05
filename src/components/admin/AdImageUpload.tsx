@@ -112,11 +112,11 @@ export function AdImageUpload({ value, onChange, position, className }: AdImageU
     if (!file) return;
 
     // Validar tipo de ficheiro
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
     if (!validTypes.includes(file.type)) {
       toast({
         title: "Tipo de ficheiro inválido",
-        description: "Por favor use JPG, PNG, WebP ou GIF.",
+        description: "Por favor use JPG, PNG, WebP, GIF ou AVIF.",
         variant: "destructive",
       });
       return;
@@ -292,14 +292,14 @@ export function AdImageUpload({ value, onChange, position, className }: AdImageU
                 Arraste uma imagem ou clique para selecionar
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                JPG, PNG, WebP ou GIF (máx. 5MB)
+                JPG, PNG, WebP, GIF ou AVIF (máx. 5MB)
               </p>
             </>
           )}
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
             onChange={handleChange}
             className="hidden"
           />
