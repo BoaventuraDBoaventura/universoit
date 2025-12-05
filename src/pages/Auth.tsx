@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import logo from "@/assets/universo-it-logo.png";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -102,10 +103,10 @@ export default function Auth() {
 
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
-              <span className="font-display text-2xl font-bold text-primary-foreground">T</span>
+            <div className="mx-auto mb-4">
+              <img src={logo} alt="Universo IT" className="h-16 w-auto" />
             </div>
-            <CardTitle className="font-display text-2xl">TechNews</CardTitle>
+            <CardTitle className="font-display text-2xl">Universo IT</CardTitle>
             <CardDescription>
               Entre na sua conta ou crie uma nova
             </CardDescription>
