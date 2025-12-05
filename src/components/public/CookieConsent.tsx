@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -135,7 +136,13 @@ export function CookieConsent() {
                   Utilizamos cookies e tecnologias semelhantes para melhorar sua experiência, 
                   personalizar conteúdo e anúncios, e analisar nosso tráfego. Ao clicar em 
                   "Aceitar todos", você concorda com o uso de cookies conforme descrito em 
-                  nossa política de privacidade.
+                  nossa{" "}
+                  <Link 
+                    to="/politica-de-privacidade" 
+                    className="text-primary underline hover:text-primary/80"
+                  >
+                    política de privacidade
+                  </Link>.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
