@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { LazyImage } from "@/components/ui/lazy-image";
 import { Article } from "@/hooks/useArticles";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -22,7 +23,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
         className="group relative block overflow-hidden rounded-xl"
       >
         <div className="aspect-[16/9] overflow-hidden">
-          <img
+          <LazyImage
             src={article.featured_image || "/placeholder.svg"}
             alt={article.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -70,7 +71,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
         className="group flex gap-4 py-4"
       >
         <div className="h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg">
-          <img
+          <LazyImage
             src={article.featured_image || "/placeholder.svg"}
             alt={article.title}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -92,7 +93,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
       className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:shadow-card-hover"
     >
       <div className="aspect-[16/10] overflow-hidden">
-        <img
+        <LazyImage
           src={article.featured_image || "/placeholder.svg"}
           alt={article.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
