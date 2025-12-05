@@ -13,6 +13,7 @@ import Search from "./pages/Search";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos-de-uso" element={<TermsOfUse />} />
+            <Route path="/contacto" element={<Contact />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<Dashboard />} />
