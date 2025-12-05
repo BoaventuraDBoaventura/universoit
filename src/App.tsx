@@ -11,6 +11,7 @@ import Article from "./pages/Article";
 import Category from "./pages/Category";
 import Search from "./pages/Search";
 import Auth from "./pages/Auth";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/categoria/:slug" element={<Category />} />
             <Route path="/busca" element={<Search />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<Dashboard />} />
