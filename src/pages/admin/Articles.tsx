@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -38,6 +39,8 @@ import {
 export default function Articles() {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,11 +76,41 @@ export default function Articles() {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("articles").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-articles"] });
+      toast({ title: `${selectedIds.length} artigo(s) eliminado(s) com sucesso` });
+      setSelectedIds([]);
+      setShowBulkDeleteDialog(false);
+    },
+    onError: () => {
+      toast({ title: "Erro ao eliminar artigos", variant: "destructive" });
+    },
+  });
+
   const filteredArticles = articles?.filter(
     (article) =>
       article.title.toLowerCase().includes(search.toLowerCase()) ||
       article.author?.full_name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredArticles?.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredArticles?.map((a) => a.id) || []);
+    }
+  };
 
   const statusColors: Record<string, string> = {
     draft: "bg-muted text-muted-foreground",
@@ -121,12 +154,30 @@ export default function Articles() {
               className="pl-9"
             />
           </div>
+          {selectedIds.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowBulkDeleteDialog(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Eliminar ({selectedIds.length})
+            </Button>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={
+                      filteredArticles?.length > 0 &&
+                      selectedIds.length === filteredArticles?.length
+                    }
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Autor</TableHead>
@@ -138,19 +189,28 @@ export default function Articles() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : filteredArticles?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Nenhum artigo encontrado
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredArticles?.map((article) => (
-                  <TableRow key={article.id}>
+                  <TableRow
+                    key={article.id}
+                    className={selectedIds.includes(article.id) ? "bg-muted/50" : ""}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.includes(article.id)}
+                        onCheckedChange={() => toggleSelect(article.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="font-medium line-clamp-1">{article.title}</div>
                       {article.is_featured && (
@@ -223,6 +283,7 @@ export default function Articles() {
         </div>
       </div>
 
+      {/* Single delete dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -238,6 +299,27 @@ export default function Articles() {
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar {selectedIds.length} artigo(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser revertida. Os artigos selecionados serão permanentemente eliminados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => bulkDeleteMutation.mutate(selectedIds)}
+            >
+              Eliminar {selectedIds.length} artigo(s)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
