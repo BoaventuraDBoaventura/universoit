@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Menu, X, User, LogOut } from "lucide-react";
+import universoItLogo from "@/assets/universo-it-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,13 +26,12 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-            <span className="font-display text-lg font-bold text-primary-foreground">U</span>
-          </div>
-          <span className="hidden font-display text-xl font-bold sm:inline-block">
-            Universo IT
-          </span>
+        <Link to="/" className="flex items-center">
+          <img 
+            src={universoItLogo} 
+            alt="Universo IT" 
+            className="h-10 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}
