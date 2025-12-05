@@ -19,6 +19,7 @@ import Articles from "./pages/admin/Articles";
 import ArticleEditor from "./pages/admin/ArticleEditor";
 import Categories from "./pages/admin/Categories";
 import Tags from "./pages/admin/Tags";
+import Comments from "./pages/admin/Comments";
 import Newsletter from "./pages/admin/Newsletter";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/admin/artigos/:id" element={<ArticleEditor />} />
             <Route path="/admin/categorias" element={<Categories />} />
             <Route path="/admin/tags" element={<Tags />} />
+            <Route path="/admin/comentarios" element={<Comments />} />
             <Route path="/admin/newsletter" element={<Newsletter />} />
             
             {/* Catch-all */}

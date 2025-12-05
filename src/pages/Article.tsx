@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { useArticleBySlug, usePublishedArticles } from "@/hooks/useArticles";
 import { ArticleCard } from "@/components/public/ArticleCard";
+import { CommentList } from "@/components/public/CommentList";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, Eye, ArrowLeft, Share2, Twitter, Facebook, Linkedin } from "lucide-react";
@@ -179,6 +180,11 @@ export default function Article() {
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="mt-12 border-t border-border pt-10">
+              <CommentList articleId={article.id} />
             </div>
           </div>
         </div>

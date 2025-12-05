@@ -21,9 +21,12 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
+import { MessageSquare } from "lucide-react";
+
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Artigos", href: "/admin/artigos", icon: FileText },
+  { name: "Comentários", href: "/admin/comentarios", icon: MessageSquare },
   { name: "Categorias", href: "/admin/categorias", icon: FolderOpen },
   { name: "Tags", href: "/admin/tags", icon: Tags },
   { name: "Anúncios", href: "/admin/anuncios", icon: Megaphone, adminOnly: true },
