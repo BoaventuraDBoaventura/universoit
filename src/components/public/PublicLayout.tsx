@@ -3,6 +3,7 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { SmartAdBanner } from "./SmartAdBanner";
 import { PopupAd } from "./PopupAd";
+import { CookieConsent } from "./CookieConsent";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -21,6 +22,9 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       
       {/* Popup Ad */}
       <PopupAd />
+      
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   );
 }
