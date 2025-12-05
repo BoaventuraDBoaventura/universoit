@@ -4,6 +4,7 @@ import { Search, Menu, X, User, LogOut } from "lucide-react";
 import universoItLogo from "@/assets/universo-it-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useArticles";
 
@@ -61,6 +62,9 @@ export function Header() {
               />
             </div>
           </form>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {user ? (
             <div className="flex items-center gap-2">
