@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { TagSelector } from "@/components/admin/TagSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,8 @@ export default function ArticleEditor() {
     is_featured: false,
     is_sponsored: false,
   });
+  
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const { data: article, isLoading } = useQuery({
     queryKey: ["article", id],
@@ -66,6 +69,21 @@ export default function ArticleEditor() {
         .single();
       if (error) throw error;
       return data;
+    },
+    enabled: !isNew,
+  });
+
+  // Fetch article tags
+  const { data: articleTags } = useQuery({
+    queryKey: ["article-tags", id],
+    queryFn: async () => {
+      if (isNew) return [];
+      const { data, error } = await supabase
+        .from("article_tags")
+        .select("tag_id")
+        .eq("article_id", id);
+      if (error) throw error;
+      return data.map((at) => at.tag_id);
     },
     enabled: !isNew,
   });
@@ -86,6 +104,12 @@ export default function ArticleEditor() {
     }
   }, [article]);
 
+  useEffect(() => {
+    if (articleTags) {
+      setSelectedTagIds(articleTags);
+    }
+  }, [articleTags]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const slug = formData.slug || generateSlug(formData.title);
@@ -96,9 +120,16 @@ export default function ArticleEditor() {
         published_at: formData.status === "published" ? new Date().toISOString() : null,
       };
 
+      let articleId = id;
+
       if (isNew) {
-        const { error } = await supabase.from("articles").insert(payload);
+        const { data, error } = await supabase
+          .from("articles")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
+        articleId = data.id;
       } else {
         const { error } = await supabase
           .from("articles")
@@ -106,9 +137,28 @@ export default function ArticleEditor() {
           .eq("id", id);
         if (error) throw error;
       }
+
+      // Sync tags
+      if (articleId) {
+        // Delete existing tags
+        await supabase.from("article_tags").delete().eq("article_id", articleId);
+        
+        // Insert new tags
+        if (selectedTagIds.length > 0) {
+          const tagInserts = selectedTagIds.map((tag_id) => ({
+            article_id: articleId,
+            tag_id,
+          }));
+          const { error: tagError } = await supabase
+            .from("article_tags")
+            .insert(tagInserts);
+          if (tagError) throw tagError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-articles"] });
+      queryClient.invalidateQueries({ queryKey: ["article-tags"] });
       toast({ title: isNew ? "Artigo criado!" : "Artigo guardado!" });
       navigate("/admin/artigos");
     },
@@ -296,6 +346,18 @@ export default function ArticleEditor() {
                     ))}
                   </SelectContent>
                 </Select>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Tags</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TagSelector
+                  selectedTagIds={selectedTagIds}
+                  onChange={setSelectedTagIds}
+                />
               </CardContent>
             </Card>
 
