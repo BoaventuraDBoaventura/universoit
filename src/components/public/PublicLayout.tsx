@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { AdBanner } from "./AdBanner";
+import { PopupAd } from "./PopupAd";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -17,6 +18,9 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       </div>
       <main className="flex-1">{children}</main>
       <Footer />
+      
+      {/* Popup Ad */}
+      <PopupAd />
     </div>
   );
 }
