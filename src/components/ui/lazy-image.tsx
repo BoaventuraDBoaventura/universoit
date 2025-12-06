@@ -19,6 +19,7 @@ export function LazyImage({
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function LazyImage({
         }
       },
       {
-        rootMargin: "100px",
+        rootMargin: "200px",
         threshold: 0.1,
       }
     );
@@ -45,22 +46,28 @@ export function LazyImage({
   const placeholder = placeholderSrc || "/placeholder.svg";
 
   return (
-    <div className={cn("relative overflow-hidden", containerClassName)}>
-      {/* Blur placeholder */}
+    <div className={cn("relative overflow-hidden bg-muted", containerClassName)}>
+      {/* Skeleton shimmer effect */}
       <div
         className={cn(
-          "absolute inset-0 bg-muted/50 backdrop-blur-sm transition-opacity duration-500",
-          isLoaded ? "opacity-0" : "opacity-100"
+          "absolute inset-0 transition-opacity duration-500",
+          isLoaded || hasError ? "opacity-0" : "opacity-100"
         )}
-      />
+      >
+        <div className="h-full w-full animate-pulse bg-gradient-to-r from-muted via-muted-foreground/10 to-muted bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
+      </div>
       
       <img
         ref={imgRef}
-        src={isInView ? src : placeholder}
+        src={hasError ? placeholder : (isInView ? src : placeholder)}
         alt={alt}
         loading="lazy"
         decoding="async"
         onLoad={() => setIsLoaded(true)}
+        onError={() => {
+          setHasError(true);
+          setIsLoaded(true);
+        }}
         className={cn(
           "transition-opacity duration-500",
           isLoaded ? "opacity-100" : "opacity-0",

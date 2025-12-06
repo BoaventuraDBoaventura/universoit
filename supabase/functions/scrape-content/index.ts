@@ -13,7 +13,61 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 interface ImportRequest {
   article_url: string;
   category_id?: string;
-  firecrawl_api_key?: string; // Optional: passed from frontend
+  firecrawl_api_key?: string;
+}
+
+// Download image and upload to Supabase Storage
+async function uploadImageToStorage(
+  supabase: any,
+  imageUrl: string,
+  articleSlug: string,
+  index: number
+): Promise<string | null> {
+  try {
+    console.log(`Downloading image: ${imageUrl}`);
+    
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; UniversoIT/1.0)',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status}`);
+      return null;
+    }
+    
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const extension = contentType.includes('png') ? 'png' 
+      : contentType.includes('gif') ? 'gif' 
+      : contentType.includes('webp') ? 'webp' 
+      : 'jpg';
+    
+    const imageData = await response.arrayBuffer();
+    const fileName = `imported/${articleSlug}/${index === 0 ? 'featured' : `image-${index}`}.${extension}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('article-images')
+      .upload(fileName, imageData, {
+        contentType,
+        upsert: true,
+      });
+    
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('article-images')
+      .getPublicUrl(fileName);
+    
+    console.log(`Uploaded to: ${publicUrl}`);
+    return publicUrl;
+  } catch (error) {
+    console.error('Image upload failed:', error);
+    return null;
+  }
 }
 
 // Convert markdown to simple HTML
@@ -202,11 +256,47 @@ serve(async (req) => {
     console.log(`Title: ${title}`);
     console.log(`Featured image: ${ogImage}`);
 
+    // Create slug first (needed for image paths)
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 100) + '-' + Date.now().toString(36);
+
+    // Upload featured image to storage
+    let featuredImageUrl = ogImage;
+    if (ogImage) {
+      const uploadedUrl = await uploadImageToStorage(supabase, ogImage, slug, 0);
+      if (uploadedUrl) {
+        featuredImageUrl = uploadedUrl;
+        console.log(`Featured image uploaded: ${uploadedUrl}`);
+      }
+    }
+
     // Clean the markdown content
     const cleanedMarkdown = cleanContent(markdown || '', ogImage);
     
+    // Extract images from content and upload them
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    let processedMarkdown = cleanedMarkdown;
+    const imageMatches = [...cleanedMarkdown.matchAll(imageRegex)];
+    
+    let imageIndex = 1;
+    for (const match of imageMatches) {
+      const [fullMatch, alt, imageUrl] = match;
+      if (imageUrl && !imageUrl.startsWith('data:')) {
+        const uploadedUrl = await uploadImageToStorage(supabase, imageUrl, slug, imageIndex);
+        if (uploadedUrl) {
+          processedMarkdown = processedMarkdown.replace(fullMatch, `![${alt}](${uploadedUrl})`);
+          imageIndex++;
+        }
+      }
+    }
+    
     // Convert cleaned markdown to HTML
-    const articleContent = markdownToHtml(cleanedMarkdown);
+    const articleContent = markdownToHtml(processedMarkdown);
     
     console.log(`Content length: ${articleContent.length} characters`);
 
@@ -216,15 +306,6 @@ serve(async (req) => {
       .substring(0, 300)
       .trim();
 
-    // Create slug
-    const slug = title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 100) + '-' + Date.now().toString(36);
-
     // Create the article as draft
     const { data: newArticle, error: articleError } = await supabase
       .from('articles')
@@ -233,7 +314,7 @@ serve(async (req) => {
         slug,
         excerpt: excerpt || null,
         content: articleContent,
-        featured_image: ogImage || null,
+        featured_image: featuredImageUrl || null,
         category_id: category_id || null,
         status: 'draft',
       })
