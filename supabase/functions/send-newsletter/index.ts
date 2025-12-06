@@ -45,7 +45,7 @@ function generateEmailHtml(
           <!-- Header -->
           <tr>
             <td style="background-color: #0ea5e9; padding: 24px; text-align: center;">
-              <h1 style="color: #ffffff; font-size: 28px; font-weight: bold; margin: 0;">Universo IT</h1>
+              <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height: 50px; width: auto;">
             </td>
           </tr>
           

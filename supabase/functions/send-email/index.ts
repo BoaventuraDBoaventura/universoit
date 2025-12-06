@@ -38,7 +38,7 @@ function generateConfirmationEmail(confirmationUrl: string): string {
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
     <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
-      <h1 style="color:#ffffff;font-size:28px;font-weight:bold;margin:0;">Universo IT</h1>
+      <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">
       <h2 style="color:#1f2937;font-size:24px;font-weight:bold;margin:0 0 24px;text-align:center;">Bem-vindo ao Universo IT!</h2>
@@ -65,7 +65,7 @@ function generatePasswordResetEmail(resetUrl: string): string {
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
     <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
-      <h1 style="color:#ffffff;font-size:28px;font-weight:bold;margin:0;">Universo IT</h1>
+      <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">
       <h2 style="color:#1f2937;font-size:24px;font-weight:bold;margin:0 0 24px;text-align:center;">Recuperação de Password</h2>
@@ -94,7 +94,7 @@ function generateMagicLinkEmail(magicLinkUrl: string, token: string): string {
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
     <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
-      <h1 style="color:#ffffff;font-size:28px;font-weight:bold;margin:0;">Universo IT</h1>
+      <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">
       <h2 style="color:#1f2937;font-size:24px;font-weight:bold;margin:0 0 24px;text-align:center;">Acesso Rápido</h2>
