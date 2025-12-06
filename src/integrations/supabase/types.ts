@@ -389,7 +389,7 @@ export type Database = {
           id: string
           original_title: string
           original_url: string
-          source_id: string
+          source_id: string | null
           status: string
         }
         Insert: {
@@ -398,7 +398,7 @@ export type Database = {
           id?: string
           original_title: string
           original_url: string
-          source_id: string
+          source_id?: string | null
           status?: string
         }
         Update: {
@@ -407,7 +407,7 @@ export type Database = {
           id?: string
           original_title?: string
           original_url?: string
-          source_id?: string
+          source_id?: string | null
           status?: string
         }
         Relationships: [
