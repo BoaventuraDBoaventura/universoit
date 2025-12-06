@@ -12,6 +12,8 @@ import Article from "./pages/Article";
 import Category from "./pages/Category";
 import Search from "./pages/Search";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import PasswordUpdated from "./pages/PasswordUpdated";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Contact from "./pages/Contact";
@@ -47,6 +49,8 @@ const App = () => (
               <Route path="/categoria/:slug" element={<Category />} />
               <Route path="/busca" element={<Search />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/redefinir-password" element={<ResetPassword />} />
+              <Route path="/password-atualizada" element={<PasswordUpdated />} />
               <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
               <Route path="/termos-de-uso" element={<TermsOfUse />} />
               <Route path="/contacto" element={<Contact />} />
