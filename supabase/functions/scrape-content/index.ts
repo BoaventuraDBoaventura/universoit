@@ -15,7 +15,7 @@ interface ImportRequest {
   category_id?: string;
 }
 
-// Convert markdown to simple HTML
+// Convert markdown to simple HTML - text only, no images or links
 function markdownToHtml(markdown: string): string {
   let html = markdown
     // Headers
@@ -29,10 +29,12 @@ function markdownToHtml(markdown: string): string {
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Images - keep them with styling
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-lg max-w-full my-4" />')
-    // Links - remove href, keep only the text
+    // Remove any remaining images
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    // Remove any remaining links, keep text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove raw URLs
+    .replace(/https?:\/\/[^\s<>]+/g, '')
     // Line breaks and paragraphs
     .replace(/\n\n+/g, '</p><p>')
     .replace(/\n/g, '<br />');
@@ -46,61 +48,115 @@ function markdownToHtml(markdown: string): string {
   // Don't wrap headers in paragraphs
   html = html.replace(/<p>(<h[1-6]>)/g, '$1').replace(/(<\/h[1-6]>)<\/p>/g, '$1');
   
+  // Remove empty tags
+  html = html.replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '');
+  html = html.replace(/(<br\s*\/?>){3,}/g, '<br /><br />');
+  
   return html;
 }
 
-// Clean content by removing unwanted sections
+// Clean content by removing ALL unwanted sections - keep ONLY article text
 function cleanContent(markdown: string, featuredImage: string | null): string {
   let content = markdown;
   
-  // Remove common unwanted patterns (social media, navigation, etc.)
+  // First, remove ALL images (including featured image in content)
+  content = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '');
+  
+  // Remove ALL links but keep the text inside
+  content = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  
+  // Remove raw URLs
+  content = content.replace(/https?:\/\/[^\s\)]+/g, '');
+  
+  // Remove common unwanted patterns
   const patternsToRemove = [
-    // Social media and sharing
-    /\[?(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|compartilhar?|share|seguir?|follow)\]?\s*(\([^)]*\))?/gi,
-    // Author/editor sections at the end
-    /^(por|by|autor|author|escrito por|written by)\s*:?\s*.+$/gmi,
+    // Social media and sharing (any format)
+    /\b(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|youtube|tiktok|x\.com)\b/gi,
+    /(compartilhar?|share|seguir?|follow|curtir|like)\s*(no|on|via)?\s*(facebook|twitter|linkedin|whatsapp|instagram)?/gi,
+    
+    // Author/editor/source sections
+    /^(por|by|autor|author|escrito por|written by|fonte|source|créditos?|credits?)\s*:?\s*.+$/gmi,
+    /(foto|imagem|image|photo)\s*:?\s*(reprodução|divulgação|arquivo|getty|shutterstock|unsplash|pixabay).*/gi,
+    /\(?reprodução\)?/gi,
+    /\(?divulgação\)?/gi,
+    
     // Newsletter/subscription CTAs
-    /(inscreva-se|subscribe|newsletter|cadastre-se|sign up).+$/gmi,
+    /(inscreva-se|subscribe|newsletter|cadastre-se|sign up|assine|receba).{0,100}(email|e-mail|grátis|free|notícias)/gi,
+    
     // Related articles sections
-    /^(leia também|read also|veja também|see also|relacionados|related).+$/gmi,
+    /^(leia também|read also|veja também|see also|relacionados|related|confira|saiba mais|leia mais).+$/gmi,
+    /(leia também|veja também|confira também|saiba mais|leia mais)\s*:?/gi,
+    
     // Comments sections
-    /^(comentários|comments|deixe .+ comentário).+$/gmi,
-    // Copyright notices
-    /^(©|copyright|\(c\)).+$/gmi,
+    /^(comentários|comments|deixe .+ comentário|comente).+$/gmi,
+    
+    // Copyright notices and site info
+    /^(©|copyright|\(c\)|todos os direitos|all rights).+$/gmi,
+    /\d{4}\s*[-–]\s*\d{4}.*direitos/gi,
+    
     // Tags and categories labels
-    /^(tags?|categorias?|categories)\s*:.*$/gmi,
-    // Navigation breadcrumbs
-    /^(home|início)\s*[>\/].+$/gmi,
-    // Social media icons/links
-    /\[?\s*(fb|tw|ig|yt|tiktok)\s*\]?/gi,
-    // Empty links
-    /\[\s*\]\([^)]*\)/g,
-    // Multiple consecutive line breaks
-    /\n{4,}/g,
+    /^(tags?|categorias?|categories|etiquetas?)\s*:.*$/gmi,
+    
+    // Navigation breadcrumbs and menus
+    /^(home|início|menu|navegação)\s*[>\/].+$/gmi,
+    
+    // Social icons text (common icon labels)
+    /\b(fb|tw|ig|yt|li|pin)\b/gi,
+    
+    // Empty brackets/links
+    /\[\s*\]/g,
+    /\(\s*\)/g,
+    
+    // Edition info
+    /(edição|edition|editado por|edited by)\s*:?\s*.*/gi,
+    
+    // Time stamps at weird places
+    /\b\d{1,2}[h:]\d{2}\s*(min)?\.?\s*$/gm,
+    
+    // Site names and footers (common patterns)
+    /publicado\s+(em|por|via)\s+.+$/gmi,
+    /atualizado\s+(em|há)\s+.+$/gmi,
+    
+    // Ad/banner placeholders
+    /(anúncio|publicidade|advertisement|sponsored|patrocinado)/gi,
+    
+    // Rating/review widgets
+    /\d+\s*(estrelas?|stars?|votos?|votes?)/gi,
+    
+    // Print/share buttons text
+    /(imprimir|print|enviar|send|salvar|save)\s*(artigo|matéria|notícia)?/gi,
+    
+    // More patterns for editorial info
+    /^(redação|editorial|edição)\b.*$/gmi,
+    /^(publicado|postado|criado)\s+.+$/gmi,
   ];
   
   for (const pattern of patternsToRemove) {
     content = content.replace(pattern, '');
   }
   
-  // Remove the featured image from content if it appears at the start
-  if (featuredImage) {
-    // Extract filename or unique part of the image URL
-    const imageFilename = featuredImage.split('/').pop()?.split('?')[0] || '';
-    if (imageFilename) {
-      // Remove markdown image that contains the featured image
-      const escapedFilename = imageFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      content = content.replace(new RegExp(`!\\[[^\\]]*\\]\\([^)]*${escapedFilename}[^)]*\\)`, 'gi'), '');
-    }
-  }
-  
-  // Remove first image if it looks like a header/featured image (usually at the very start)
-  content = content.replace(/^!\[[^\]]*\]\([^)]+\)\s*\n*/i, '');
+  // Remove lines that are just markdown formatting characters or single words
+  content = content
+    .split('\n')
+    .filter(line => {
+      const trimmed = line.trim();
+      // Remove lines that are too short (likely navigation or UI elements)
+      if (trimmed.length > 0 && trimmed.length < 5 && !/^[#\-*]/.test(trimmed)) {
+        return false;
+      }
+      // Remove lines that are just symbols
+      if (/^[*\-_=|]+$/.test(trimmed)) {
+        return false;
+      }
+      return true;
+    })
+    .join('\n');
   
   // Clean up excessive whitespace
   content = content
     .replace(/^\s+/gm, '') // Remove leading whitespace from lines
     .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive line breaks
+    .replace(/^\s*\n/gm, '\n') // Remove blank lines at start
     .trim();
   
   return content;
