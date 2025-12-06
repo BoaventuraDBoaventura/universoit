@@ -8,8 +8,7 @@ import {
   Preview,
   Text,
   Section,
-  Button,
-} from "https://esm.sh/@react-email/components@0.0.22"
+} from "https://esm.sh/@react-email/components@0.0.22?external=react"
 import * as React from "https://esm.sh/react@18.3.1"
 
 interface MagicLinkEmailProps {
@@ -40,16 +39,16 @@ export const MagicLinkEmail = ({
           </Section>
           
           <Section style={contentSection}>
-            <Heading style={h1}>Acesso Rápido ✨</Heading>
+            <Heading style={h1}>Acesso Rápido</Heading>
             
             <Text style={text}>
-              Alguém pediu um link de acesso para a tua conta no Universo IT. Clica no botão abaixo para entrar automaticamente:
+              Alguém pediu um link de acesso para a tua conta no Universo IT. Clica no link abaixo para entrar automaticamente:
             </Text>
             
             <Section style={buttonContainer}>
-              <Button style={button} href={magicLinkUrl}>
+              <Link style={button} href={magicLinkUrl}>
                 Entrar no Universo IT
-              </Button>
+              </Link>
             </Section>
             
             <Text style={textCenter}>
@@ -77,7 +76,7 @@ export const MagicLinkEmail = ({
           
           <Section style={footer}>
             <Text style={footerText}>
-              © {new Date().getFullYear()} Universo IT. Todos os direitos reservados.
+              Universo IT. Todos os direitos reservados.
             </Text>
             <Link href="https://universoit.tech" style={footerLink}>
               universoit.tech

@@ -8,8 +8,7 @@ import {
   Preview,
   Text,
   Section,
-  Button,
-} from "https://esm.sh/@react-email/components@0.0.22"
+} from "https://esm.sh/@react-email/components@0.0.22?external=react"
 import * as React from "https://esm.sh/react@18.3.1"
 
 interface PasswordResetEmailProps {
@@ -38,25 +37,25 @@ export const PasswordResetEmail = ({
           </Section>
           
           <Section style={contentSection}>
-            <Heading style={h1}>Recuperação de Password 🔐</Heading>
+            <Heading style={h1}>Recuperação de Password</Heading>
             
             <Text style={text}>
               Recebemos um pedido para repor a password da tua conta no Universo IT.
             </Text>
             
             <Text style={text}>
-              Se fizeste este pedido, clica no botão abaixo para criar uma nova password:
+              Se fizeste este pedido, clica no link abaixo para criar uma nova password:
             </Text>
             
             <Section style={buttonContainer}>
-              <Button style={button} href={resetUrl}>
+              <Link style={button} href={resetUrl}>
                 Repor Password
-              </Button>
+              </Link>
             </Section>
             
             <Section style={warningBox}>
               <Text style={warningText}>
-                ⚠️ <strong>Importante:</strong> Este link expira em 24 horas. Se não fizeste este pedido, ignora este email e a tua password permanecerá inalterada.
+                Importante: Este link expira em 24 horas. Se não fizeste este pedido, ignora este email.
               </Text>
             </Section>
             
@@ -73,7 +72,7 @@ export const PasswordResetEmail = ({
           
           <Section style={footer}>
             <Text style={footerText}>
-              © {new Date().getFullYear()} Universo IT. Todos os direitos reservados.
+              Universo IT. Todos os direitos reservados.
             </Text>
             <Link href="https://universoit.tech" style={footerLink}>
               universoit.tech

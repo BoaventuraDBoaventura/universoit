@@ -8,8 +8,7 @@ import {
   Preview,
   Text,
   Section,
-  Button,
-} from "https://esm.sh/@react-email/components@0.0.22"
+} from "https://esm.sh/@react-email/components@0.0.22?external=react"
 import * as React from "https://esm.sh/react@18.3.1"
 
 interface ConfirmationEmailProps {
@@ -38,20 +37,20 @@ export const ConfirmationEmail = ({
           </Section>
           
           <Section style={contentSection}>
-            <Heading style={h1}>Bem-vindo ao Universo IT! 🚀</Heading>
+            <Heading style={h1}>Bem-vindo ao Universo IT!</Heading>
             
             <Text style={text}>
               Obrigado por te registares no Universo IT, o teu portal de notícias e artigos sobre tecnologia e inovação.
             </Text>
             
             <Text style={text}>
-              Para completares o teu registo e começares a explorar o universo tecnológico, confirma o teu email clicando no botão abaixo:
+              Para completares o teu registo e começares a explorar o universo tecnológico, confirma o teu email clicando no link abaixo:
             </Text>
             
             <Section style={buttonContainer}>
-              <Button style={button} href={confirmationUrl}>
+              <Link style={button} href={confirmationUrl}>
                 Confirmar Email
-              </Button>
+              </Link>
             </Section>
             
             <Text style={textMuted}>
@@ -71,7 +70,7 @@ export const ConfirmationEmail = ({
           
           <Section style={footer}>
             <Text style={footerText}>
-              © {new Date().getFullYear()} Universo IT. Todos os direitos reservados.
+              Universo IT. Todos os direitos reservados.
             </Text>
             <Link href="https://universoit.tech" style={footerLink}>
               universoit.tech
