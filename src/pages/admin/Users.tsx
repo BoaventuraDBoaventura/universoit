@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Download, MoreHorizontal, Shield, UserCog, User, Plus } from "lucide-react";
+import { Search, Download, MoreHorizontal, Shield, UserCog, User, Plus, Mail, Ban, CheckCircle, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -63,6 +63,7 @@ interface UserWithRoles {
   avatar_url: string | null;
   created_at: string;
   roles: AppRole[];
+  banned?: boolean;
 }
 
 interface CreateUserForm {
@@ -112,17 +113,34 @@ const Users = () => {
 
       if (rolesError) throw rolesError;
 
+      // Fetch users banned status
+      let usersStatus: { id: string; banned: boolean }[] = [];
+      try {
+        const { data } = await supabase.functions.invoke("manage-user", {
+          body: { action: "list_users_status" },
+        });
+        if (data?.users) {
+          usersStatus = data.users;
+        }
+      } catch (e) {
+        console.error("Error fetching users status:", e);
+      }
+
       // Combine profiles with roles
-      const usersWithRoles: UserWithRoles[] = profiles.map((profile) => ({
-        id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
-        created_at: profile.created_at,
-        roles: userRoles
-          .filter((r) => r.user_id === profile.id)
-          .map((r) => r.role as AppRole),
-      }));
+      const usersWithRoles: UserWithRoles[] = profiles.map((profile) => {
+        const status = usersStatus.find(u => u.id === profile.id);
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          created_at: profile.created_at,
+          roles: userRoles
+            .filter((r) => r.user_id === profile.id)
+            .map((r) => r.role as AppRole),
+          banned: status?.banned || false,
+        };
+      });
 
       return usersWithRoles;
     },
@@ -183,6 +201,83 @@ const Users = () => {
       toast({
         title: "Role adicionado",
         description: "O role foi adicionado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send password reset email mutation
+  const sendPasswordResetMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await supabase.functions.invoke("manage-user", {
+        body: { action: "send_password_reset", email },
+      });
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email enviado",
+        description: "Email de redefinição de password enviado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Ban user mutation
+  const banUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await supabase.functions.invoke("manage-user", {
+        body: { action: "ban_user", userId },
+      });
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({
+        title: "Utilizador desativado",
+        description: "O utilizador foi desativado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Unban user mutation
+  const unbanUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await supabase.functions.invoke("manage-user", {
+        body: { action: "unban_user", userId },
+      });
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({
+        title: "Utilizador ativado",
+        description: "O utilizador foi ativado com sucesso.",
       });
     },
     onError: (error: Error) => {
@@ -447,6 +542,7 @@ const Users = () => {
               <TableRow>
                 <TableHead>Utilizador</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Data de Registo</TableHead>
                 <TableHead className="w-[70px]">Ações</TableHead>
@@ -455,13 +551,13 @@ const Users = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     A carregar...
                   </TableCell>
                 </TableRow>
               ) : filteredUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum utilizador encontrado
                   </TableCell>
                 </TableRow>
@@ -483,6 +579,19 @@ const Users = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email || "Sem email"}
+                    </TableCell>
+                    <TableCell>
+                      {user.banned ? (
+                        <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                          <Ban className="h-3 w-3" />
+                          Desativado
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="flex items-center gap-1 w-fit text-green-600 border-green-600">
+                          <CheckCircle className="h-3 w-3" />
+                          Ativo
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -556,6 +665,37 @@ const Users = () => {
                               <UserCog className="h-4 w-4 mr-2" />
                               Remover Editor
                             </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          {user.email && (
+                            <DropdownMenuItem
+                              onClick={() => sendPasswordResetMutation.mutate(user.email!)}
+                              disabled={sendPasswordResetMutation.isPending}
+                            >
+                              <KeyRound className="h-4 w-4 mr-2" />
+                              Enviar reset de password
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          {user.id !== currentUser?.id && (
+                            user.banned ? (
+                              <DropdownMenuItem
+                                onClick={() => unbanUserMutation.mutate(user.id)}
+                                disabled={unbanUserMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                Ativar utilizador
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => banUserMutation.mutate(user.id)}
+                                disabled={banUserMutation.isPending}
+                                className="text-destructive"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Desativar utilizador
+                              </DropdownMenuItem>
+                            )
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
