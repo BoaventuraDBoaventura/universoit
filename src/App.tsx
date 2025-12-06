@@ -18,6 +18,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Contact from "./pages/Contact";
 import AllArticles from "./pages/AllArticles";
+import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/termos-de-uso" element={<TermsOfUse />} />
               <Route path="/contacto" element={<Contact />} />
               <Route path="/todas" element={<AllArticles />} />
+              <Route path="/cancelar-subscricao" element={<Unsubscribe />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
