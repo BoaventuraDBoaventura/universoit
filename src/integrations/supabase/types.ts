@@ -144,6 +144,7 @@ export type Database = {
           published_at: string | null
           scheduled_at: string | null
           slug: string
+          source_id: string | null
           status: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at: string
@@ -162,6 +163,7 @@ export type Database = {
           published_at?: string | null
           scheduled_at?: string | null
           slug: string
+          source_id?: string | null
           status?: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at?: string
@@ -180,6 +182,7 @@ export type Database = {
           published_at?: string | null
           scheduled_at?: string | null
           slug?: string
+          source_id?: string | null
           status?: Database["public"]["Enums"]["article_status"]
           title?: string
           updated_at?: string
@@ -198,6 +201,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "content_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -321,6 +331,101 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      content_sources: {
+        Row: {
+          articles_imported: number | null
+          category_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_scraped_at: string | null
+          name: string
+          scrape_frequency_hours: number | null
+          scrape_url: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          articles_imported?: number | null
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          name: string
+          scrape_frequency_hours?: number | null
+          scrape_url: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          articles_imported?: number | null
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          name?: string
+          scrape_frequency_hours?: number | null
+          scrape_url?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imported_articles: {
+        Row: {
+          article_id: string | null
+          created_at: string
+          id: string
+          original_title: string
+          original_url: string
+          source_id: string
+          status: string
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          original_title: string
+          original_url: string
+          source_id: string
+          status?: string
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          original_title?: string
+          original_url?: string
+          source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_articles_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imported_articles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "content_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       newsletter_subscribers: {
         Row: {
