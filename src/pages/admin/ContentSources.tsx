@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Loader2, ExternalLink, Check, AlertCircle } from "lucide-react";
+import { Download, Loader2, ExternalLink, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,9 +70,9 @@ export default function ContentSources() {
   });
 
   const importMutation = useMutation({
-    mutationFn: async ({ url, category_id }: { url: string; category_id?: string }) => {
+    mutationFn: async ({ url, category_id, force_update }: { url: string; category_id?: string; force_update?: boolean }) => {
       const { data, error } = await supabase.functions.invoke("scrape-content", {
-        body: { article_url: url, category_id: category_id || null },
+        body: { article_url: url, category_id: category_id || null, force_update },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
@@ -82,8 +82,10 @@ export default function ContentSources() {
       queryClient.invalidateQueries({ queryKey: ["imported-articles"] });
       queryClient.invalidateQueries({ queryKey: ["admin-articles"] });
       toast({
-        title: "Artigo importado com sucesso!",
-        description: `"${data.article.title}" foi criado como rascunho.`,
+        title: data.updated ? "Artigo atualizado com sucesso!" : "Artigo importado com sucesso!",
+        description: data.updated 
+          ? `"${data.article.title}" foi atualizado.`
+          : `"${data.article.title}" foi criado como rascunho.`,
       });
       setArticleUrl("");
       // Navigate to the article editor
@@ -100,11 +102,15 @@ export default function ContentSources() {
     },
   });
 
-  const handleImport = (e: React.FormEvent) => {
+  const handleImport = (e: React.FormEvent, forceUpdate = false) => {
     e.preventDefault();
     if (!articleUrl.trim()) return;
     
-    importMutation.mutate({ url: articleUrl.trim(), category_id: categoryId || undefined });
+    importMutation.mutate({ url: articleUrl.trim(), category_id: categoryId || undefined, force_update: forceUpdate });
+  };
+
+  const handleReimport = (url: string) => {
+    importMutation.mutate({ url, force_update: true });
   };
 
   return (
@@ -260,15 +266,26 @@ export default function ContentSources() {
                           locale: pt,
                         })}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex items-center gap-1">
                         {article.article_id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/admin/artigos/${article.article_id}`)}
-                          >
-                            Editar
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/admin/artigos/${article.article_id}`)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReimport(article.original_url)}
+                              disabled={importMutation.isPending}
+                              title="Re-importar e atualizar conteúdo"
+                            >
+                              <RefreshCw className={`h-4 w-4 ${importMutation.isPending ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
