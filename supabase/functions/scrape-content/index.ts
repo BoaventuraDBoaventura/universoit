@@ -15,7 +15,53 @@ interface ImportRequest {
   category_id?: string;
 }
 
-// Convert markdown to HTML - keep images, remove links
+// Check if URL is a valid content image (not an icon or social media)
+function isValidContentImage(url: string): boolean {
+  if (!url) return false;
+  
+  // Must be a valid http/https URL
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return false;
+  
+  // Skip social media icons and small images
+  const invalidPatterns = [
+    /icon/i,
+    /logo/i,
+    /avatar/i,
+    /favicon/i,
+    /badge/i,
+    /button/i,
+    /social/i,
+    /share/i,
+    /twitter/i,
+    /facebook/i,
+    /instagram/i,
+    /whatsapp/i,
+    /linkedin/i,
+    /youtube/i,
+    /tiktok/i,
+    /telegram/i,
+    /pinterest/i,
+    /x\.com/i,
+    /sprite/i,
+    /1x1/i,
+    /pixel/i,
+    /tracking/i,
+    /ads?[\/\-_]/i,
+    /banner[s]?\//i,
+  ];
+  
+  for (const pattern of invalidPatterns) {
+    if (pattern.test(url)) return false;
+  }
+  
+  // Must have image extension or be from known image CDNs
+  const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url);
+  const isFromImageCDN = /wp-content\/uploads|cdn|img\.|images?\./i.test(url);
+  
+  return hasImageExtension || isFromImageCDN;
+}
+
+// Convert markdown to HTML - keep only valid content images, remove links
 function markdownToHtml(markdown: string): string {
   let html = markdown
     // Headers
@@ -29,8 +75,13 @@ function markdownToHtml(markdown: string): string {
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Images - KEEP them with styling
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-lg max-w-full my-4" />')
+    // Images - only keep valid content images
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+      if (isValidContentImage(url)) {
+        return `<img src="${url}" alt="${alt}" class="rounded-lg max-w-full my-4" />`;
+      }
+      return ''; // Remove invalid images
+    })
     // Links - remove href, keep only the text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove raw URLs
@@ -51,25 +102,33 @@ function markdownToHtml(markdown: string): string {
   // Don't wrap images in paragraphs incorrectly
   html = html.replace(/<p>(<img[^>]+>)<\/p>/g, '$1');
   
-  // Remove empty tags
+  // Remove empty tags and excessive breaks
   html = html.replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '');
   html = html.replace(/(<br\s*\/?>){3,}/g, '<br /><br />');
   
   return html;
 }
 
-// Clean content - remove unwanted text but KEEP images
+// Clean content - remove unwanted text and icons, KEEP valid content images
 function cleanContent(markdown: string, featuredImage: string | null): string {
   let content = markdown;
   
-  // Remove the featured image from content if it appears (to avoid duplication)
-  if (featuredImage) {
-    const imageFilename = featuredImage.split('/').pop()?.split('?')[0] || '';
-    if (imageFilename) {
-      const escapedFilename = imageFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      content = content.replace(new RegExp(`!\\[[^\\]]*\\]\\([^)]*${escapedFilename}[^)]*\\)`, 'gi'), '');
+  // Remove images that are icons/social/not content (before other processing)
+  content = content.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+    // Check if this is a valid content image
+    if (isValidContentImage(url)) {
+      // Check if it's the featured image (to avoid duplication)
+      if (featuredImage) {
+        const featuredFilename = featuredImage.split('/').pop()?.split('?')[0] || '';
+        const urlFilename = url.split('/').pop()?.split('?')[0] || '';
+        if (featuredFilename && urlFilename && featuredFilename === urlFilename) {
+          return ''; // Remove featured image from content
+        }
+      }
+      return match; // Keep valid content images
     }
-  }
+    return ''; // Remove invalid images (icons, logos, etc)
+  });
   
   // Remove first image if it's at the very start (usually the featured image)
   content = content.replace(/^!\[[^\]]*\]\([^)]+\)\s*\n*/i, '');
@@ -77,102 +136,93 @@ function cleanContent(markdown: string, featuredImage: string | null): string {
   // Remove ALL links but keep the text inside
   content = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // Remove raw URLs (but not image URLs which start with !)
-  content = content.replace(/(?<!!)\bhttps?:\/\/[^\s\)]+/g, '');
+  // Remove raw URLs (but not in image markdown)
+  content = content.replace(/(?<![\(\!])\bhttps?:\/\/[^\s\)\]]+/g, '');
   
-  // Remove common unwanted patterns - only TEXT, not images
+  // Remove common unwanted patterns - only TEXT
   const patternsToRemove = [
-    // Social media and sharing (any format)
-    /\b(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|youtube|tiktok|x\.com)\b/gi,
-    /(compartilhar?|share|seguir?|follow|curtir|like)\s*(no|on|via)?\s*(facebook|twitter|linkedin|whatsapp|instagram)?/gi,
+    // Site header/menu items
+    /^(menu|home|início|acesse|entre|sair|login|cadastro|buscar?|pesquisar?)\s*$/gmi,
+    /^(editar perfil|meu .+|minha .+|clube .+|assine|assinatura)\s*$/gmi,
     
-    // Author/editor/source sections
-    /^(por|by|autor|author|escrito por|written by|fonte|source|créditos?|credits?)\s*:?\s*.+$/gmi,
-    /(foto|imagem|image|photo)\s*:?\s*(reprodução|divulgação|arquivo|getty|shutterstock|unsplash|pixabay).*/gi,
-    /\(?reprodução\)?/gi,
-    /\(?divulgação\)?/gi,
+    // Breadcrumbs
+    /^.+\s*>\s*.+\s*>\s*.+$/gm,
+    /olhar digital\s*>/gi,
+    
+    // Social media and sharing
+    /(compartilh(ar|e)|share)\s*(esta|this)?\s*(matéria|notícia|artigo)?/gi,
+    /siga .+ (no|on) .+/gi,
+    /\b(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|youtube|tiktok|x\.com)\b/gi,
+    
+    // Author bylines (but keep content about the topic)
+    /^[A-Za-zÀ-ú\s]+\d{2}\/\d{2}\/\d{4}\s*$/gm, // "Lucas Soares06/12/2025"
     
     // Newsletter/subscription CTAs
     /(inscreva-se|subscribe|newsletter|cadastre-se|sign up|assine|receba).{0,100}(email|e-mail|grátis|free|notícias)/gi,
+    /conheça o clube/gi,
     
-    // Related articles sections
-    /^(leia também|read also|veja também|see also|relacionados|related|confira|saiba mais|leia mais).+$/gmi,
-    /(leia também|veja também|confira também|saiba mais|leia mais)\s*:?/gi,
+    // Related articles
+    /^[\-\*]\s*(entenda|saiba|confira|leia|veja).+$/gmi,
     
     // Comments sections
-    /^(comentários|comments|deixe .+ comentário|comente).+$/gmi,
+    /(comentários?|comments?|comente|carregar mais)/gi,
+    /cancelar\s*publicar/gi,
     
-    // Copyright notices and site info
+    // Copyright and legal
     /^(©|copyright|\(c\)|todos os direitos|all rights).+$/gmi,
-    /\d{4}\s*[-–]\s*\d{4}.*direitos/gi,
     
-    // Tags and categories labels
-    /^(tags?|categorias?|categories|etiquetas?)\s*:.*$/gmi,
+    // Tags/categories labels
+    /^(tags?|categorias?|categories)\s*:.*$/gmi,
     
-    // Navigation breadcrumbs and menus
-    /^(home|início|menu|navegação)\s*[>\/].+$/gmi,
+    // Social icon text
+    /ícone\s*(do|da|de)?\s*(facebook|twitter|x|instagram|whatsapp|email|linkedin)/gi,
     
-    // Social icons text (common icon labels)
-    /\b(fb|tw|ig|yt|li|pin)\b/gi,
-    
-    // Empty brackets/links
+    // Empty brackets
     /\[\s*\]/g,
     /\(\s*\)/g,
+    /\(\s*:\/?\/?\/?[^)]*\)/g, // (://?...)
     
-    // Edition info
-    /(edição|edition|editado por|edited by)\s*:?\s*.*/gi,
+    // Editor info
+    /^(redação|editorial|editor\(a\))\s*$/gmi,
+    /lucas soares.*jornalista.*/gi,
     
-    // Time stamps at weird places
-    /\b\d{1,2}[h:]\d{2}\s*(min)?\.?\s*$/gm,
-    
-    // Site names and footers (common patterns)
-    /publicado\s+(em|por|via)\s+.+$/gmi,
-    /atualizado\s+(em|há)\s+.+$/gmi,
-    
-    // Ad/banner placeholders
-    /(anúncio|publicidade|advertisement|sponsored|patrocinado)/gi,
-    
-    // Rating/review widgets
-    /\d+\s*(estrelas?|stars?|votos?|votes?)/gi,
-    
-    // Print/share buttons text
-    /(imprimir|print|enviar|send|salvar|save)\s*(artigo|matéria|notícia)?/gi,
-    
-    // More patterns for editorial info
-    /^(redação|editorial|edição)\b.*$/gmi,
-    /^(publicado|postado|criado)\s+.+$/gmi,
+    // Footer garbage
+    /\[uol tag.*/gi,
+    /mercúrio/gi,
+    /clean expired cookie/gi,
   ];
   
   for (const pattern of patternsToRemove) {
     content = content.replace(pattern, '');
   }
   
-  // Remove lines that are just text fragments (not images)
+  // Remove lines that are navigation, UI or very short fragments
   content = content
     .split('\n')
     .filter(line => {
       const trimmed = line.trim();
-      // Keep image lines
-      if (/^!\[/.test(trimmed)) {
-        return true;
-      }
-      // Remove lines that are too short (likely navigation or UI elements)
-      if (trimmed.length > 0 && trimmed.length < 5 && !/^[#\-*]/.test(trimmed)) {
-        return false;
-      }
-      // Remove lines that are just symbols
-      if (/^[*\-_=|]+$/.test(trimmed)) {
-        return false;
-      }
+      if (!trimmed) return false;
+      
+      // Keep image lines (they'll be validated in markdownToHtml)
+      if (/^!\[/.test(trimmed)) return true;
+      
+      // Keep headers
+      if (/^#{1,6}\s+/.test(trimmed)) return true;
+      
+      // Remove lines that are too short (likely navigation)
+      if (trimmed.length < 10 && !/^[\-\*]/.test(trimmed)) return false;
+      
+      // Remove lines that are just symbols or dates
+      if (/^[*\-_=|:\s]+$/.test(trimmed)) return false;
+      if (/^\d{2}\/\d{2}\/\d{4}\s*$/.test(trimmed)) return false;
+      
       return true;
     })
     .join('\n');
   
   // Clean up excessive whitespace
   content = content
-    .replace(/^\s+/gm, '') // Remove leading whitespace from lines
-    .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive line breaks
-    .replace(/^\s*\n/gm, '\n') // Remove blank lines at start
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
   
   return content;
