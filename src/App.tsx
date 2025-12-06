@@ -32,6 +32,7 @@ import Newsletter from "./pages/admin/Newsletter";
 import Advertisements from "./pages/admin/Advertisements";
 import AdStatistics from "./pages/admin/AdStatistics";
 import Users from "./pages/admin/Users";
+import ContentSources from "./pages/admin/ContentSources";
 
 const queryClient = new QueryClient();
 
@@ -58,10 +59,11 @@ const App = () => (
               <Route path="/todas" element={<AllArticles />} />
               <Route path="/cancelar-subscricao" element={<Unsubscribe />} />
               
-              {/* Admin Routes */}
+{/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
               <Route path="/admin/artigos" element={<Articles />} />
               <Route path="/admin/artigos/:id" element={<ArticleEditor />} />
+              <Route path="/admin/fontes" element={<ContentSources />} />
               <Route path="/admin/categorias" element={<Categories />} />
               <Route path="/admin/tags" element={<Tags />} />
               <Route path="/admin/comentarios" element={<Comments />} />

@@ -12,6 +12,8 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  MessageSquare,
+  Rss,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,11 +23,10 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
-import { MessageSquare } from "lucide-react";
-
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Artigos", href: "/admin/artigos", icon: FileText },
+  { name: "Fontes", href: "/admin/fontes", icon: Rss, adminOnly: true },
   { name: "Comentários", href: "/admin/comentarios", icon: MessageSquare },
   { name: "Categorias", href: "/admin/categorias", icon: FolderOpen },
   { name: "Tags", href: "/admin/tags", icon: Tags },

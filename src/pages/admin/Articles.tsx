@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, Download, CheckCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,10 +41,11 @@ export default function Articles() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [filterImported, setFilterImported] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: articles, isLoading } = useQuery({
+const { data: articles, isLoading } = useQuery({
     queryKey: ["admin-articles"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,7 +53,8 @@ export default function Articles() {
         .select(`
           *,
           category:categories(id, name, color),
-          author:profiles(id, full_name)
+          author:profiles(id, full_name),
+          source:content_sources(id, name)
         `)
         .order("created_at", { ascending: false });
 
@@ -92,11 +94,36 @@ export default function Articles() {
     },
   });
 
-  const filteredArticles = articles?.filter(
-    (article) =>
+  const publishMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("articles")
+        .update({ status: "published", published_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-articles"] });
+      toast({ title: "Artigo publicado com sucesso" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao publicar artigo", variant: "destructive" });
+    },
+  });
+
+  const filteredArticles = articles?.filter((article) => {
+    const matchesSearch =
       article.title.toLowerCase().includes(search.toLowerCase()) ||
-      article.author?.full_name?.toLowerCase().includes(search.toLowerCase())
-  );
+      article.author?.full_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesImportedFilter = filterImported
+      ? article.source_id && article.status === "draft"
+      : true;
+    return matchesSearch && matchesImportedFilter;
+  });
+
+  const importedDraftCount = articles?.filter(
+    (a) => a.source_id && a.status === "draft"
+  ).length || 0;
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -144,16 +171,25 @@ export default function Articles() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+<div className="flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Pesquisar artigos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+className="pl-9"
             />
           </div>
+          {importedDraftCount > 0 && (
+            <Button
+              variant={filterImported ? "default" : "outline"}
+              onClick={() => setFilterImported(!filterImported)}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Importados ({importedDraftCount})
+            </Button>
+          )}
           {selectedIds.length > 0 && (
             <Button
               variant="destructive"
@@ -211,13 +247,21 @@ export default function Articles() {
                         onCheckedChange={() => toggleSelect(article.id)}
                       />
                     </TableCell>
-                    <TableCell>
+<TableCell>
                       <div className="font-medium line-clamp-1">{article.title}</div>
-                      {article.is_featured && (
-                        <Badge variant="outline" className="mt-1 text-xs">
-                          Destaque
-                        </Badge>
-                      )}
+                      <div className="flex gap-1 mt-1">
+                        {article.is_featured && (
+                          <Badge variant="outline" className="text-xs">
+                            Destaque
+                          </Badge>
+                        )}
+                        {article.source_id && (
+                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-500">
+                            <Download className="h-3 w-3 mr-1" />
+                            Importado
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {article.category && (
@@ -259,12 +303,20 @@ export default function Articles() {
                               </a>
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem asChild>
+<DropdownMenuItem asChild>
                             <Link to={`/admin/artigos/${article.id}`}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </Link>
                           </DropdownMenuItem>
+                          {article.status === "draft" && (
+                            <DropdownMenuItem
+                              onClick={() => publishMutation.mutate(article.id)}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Publicar
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => setDeleteId(article.id)}
