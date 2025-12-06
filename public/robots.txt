@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://qpljdthnqdatcirkudpc.supabase.co/functions/v1/sitemap
+Sitemap: https://universoit.tech/sitemap.xml
