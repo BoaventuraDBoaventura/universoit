@@ -132,21 +132,38 @@ serve(async (req) => {
 
     console.log(`Importing article from: ${article_url}`);
 
-    // Check if article was already imported
+    // Check if article was already imported (and still exists)
     const { data: existingImport } = await supabase
       .from('imported_articles')
       .select('id, article_id')
       .eq('original_url', article_url)
-      .single();
+      .maybeSingle();
 
+    if (existingImport && existingImport.article_id) {
+      // Check if the article still exists
+      const { data: existingArticle } = await supabase
+        .from('articles')
+        .select('id')
+        .eq('id', existingImport.article_id)
+        .maybeSingle();
+      
+      if (existingArticle) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Este artigo já foi importado anteriormente',
+            article_id: existingImport.article_id 
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
+    // If there's an orphaned import record, delete it
     if (existingImport) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Este artigo já foi importado anteriormente',
-          article_id: existingImport.article_id 
-        }),
-        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await supabase
+        .from('imported_articles')
+        .delete()
+        .eq('id', existingImport.id);
     }
 
     // Scrape the article using Firecrawl - request only markdown for cleaner content
