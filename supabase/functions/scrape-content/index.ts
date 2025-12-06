@@ -23,62 +23,70 @@ interface ArticleData {
   image?: string;
 }
 
-// Common non-article URL patterns to exclude
+// Patterns that indicate a URL is NOT an article (pagination, categories, etc.)
 const NON_ARTICLE_PATTERNS = [
-  /\/page\/\d+/i,
-  /\/categoria\//i,
-  /\/category\//i,
-  /\/tag\//i,
-  /\/tema\//i,
-  /\/author\//i,
-  /\/autor\//i,
-  /\/search/i,
-  /\/pesquisa/i,
-  /\/contact/i,
-  /\/contato/i,
-  /\/about/i,
-  /\/sobre/i,
-  /\/privacy/i,
-  /\/privacidade/i,
-  /\/terms/i,
-  /\/termos/i,
-  /\/login/i,
-  /\/register/i,
-  /\/feed/i,
-  /\/rss/i,
+  /\/page\/\d+$/i,           // pagination only at end
+  /\/pagina\/\d+$/i,
+  /\/editorias\/?$/i,        // category listings
+  /\/search\/?$/i,
+  /\/pesquisa\/?$/i,
+  /\/contact\/?$/i,
+  /\/contato\/?$/i,
+  /\/about\/?$/i,
+  /\/sobre\/?$/i,
+  /\/privacy\/?$/i,
+  /\/privacidade\/?$/i,
+  /\/terms\/?$/i,
+  /\/termos\/?$/i,
+  /\/login\/?$/i,
+  /\/register\/?$/i,
+  /\/feed\/?$/i,
+  /\/rss\/?$/i,
   /\/#/,
   /\.xml$/i,
   /\.json$/i,
 ];
 
 function isArticleUrl(url: string, baseUrl: string): boolean {
-  // Must be from the same domain
   try {
     const urlObj = new URL(url);
     const baseObj = new URL(baseUrl);
+    
+    // Must be from the same domain
     if (urlObj.hostname !== baseObj.hostname) return false;
+    
+    const path = urlObj.pathname;
+    
+    // Skip homepage
+    if (path === '/' || path === '') return false;
+    
+    // Check against non-article patterns
+    for (const pattern of NON_ARTICLE_PATTERNS) {
+      if (pattern.test(path)) return false;
+    }
+    
+    // Articles typically have dates or slugs in the URL
+    // Accept URLs with date patterns (e.g., /2025/12/06/article-slug)
+    const hasDatePattern = /\/\d{4}\/\d{2}\/\d{2}\//.test(path);
+    
+    // Or URLs that end with a long slug (likely an article)
+    const segments = path.split('/').filter(Boolean);
+    const lastSegment = segments[segments.length - 1] || '';
+    
+    // Article slugs typically:
+    // - Have at least 10 characters (meaningful title)
+    // - Contain hyphens (slug format)
+    // - Are not just numbers
+    const isLikelySlug = lastSegment.length >= 10 && 
+                         lastSegment.includes('-') && 
+                         !/^\d+$/.test(lastSegment);
+    
+    // Accept if has date pattern OR looks like an article slug
+    return hasDatePattern || isLikelySlug;
+    
   } catch {
     return false;
   }
-
-  // Check against non-article patterns
-  for (const pattern of NON_ARTICLE_PATTERNS) {
-    if (pattern.test(url)) return false;
-  }
-
-  // Article URLs typically have more path segments and end with a slug
-  const path = new URL(url).pathname;
-  const segments = path.split('/').filter(Boolean);
-  
-  // Most article URLs have at least 1 meaningful segment (the slug)
-  // and don't end with just a number or very short segment
-  if (segments.length === 0) return false;
-  
-  const lastSegment = segments[segments.length - 1];
-  // Article slugs are usually longer than 5 characters
-  if (lastSegment.length < 5) return false;
-  
-  return true;
 }
 
 serve(async (req) => {
