@@ -238,35 +238,65 @@ serve(async (req) => {
         .eq('id', existingImport.id);
     }
 
-    // Scrape the article using Firecrawl - request only markdown for cleaner content
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: article_url,
-        formats: ['markdown'],
-        onlyMainContent: true,
-      }),
-    });
-
-    if (!scrapeResponse.ok) {
-      const errorText = await scrapeResponse.text();
-      console.error('Firecrawl error:', errorText);
-      return new Response(
-        JSON.stringify({ error: 'Falha ao buscar o artigo', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const scrapeData = await scrapeResponse.json();
+    // Scrape the article using Firecrawl with retry logic
+    const maxRetries = 3;
+    let scrapeData = null;
+    let lastError = '';
     
-    if (!scrapeData.success || !scrapeData.data) {
-      console.error('No data returned from scrape');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`Firecrawl attempt ${attempt}/${maxRetries}`);
+      
+      try {
+        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: article_url,
+            formats: ['markdown'],
+            onlyMainContent: true,
+          }),
+        });
+
+        if (!scrapeResponse.ok) {
+          lastError = await scrapeResponse.text();
+          console.error(`Firecrawl error (attempt ${attempt}):`, lastError);
+          
+          // If it's a temporary error, wait and retry
+          if (attempt < maxRetries && (lastError.includes('Redis') || lastError.includes('Internal server error'))) {
+            console.log(`Waiting 2 seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+        } else {
+          const data = await scrapeResponse.json();
+          if (data.success && data.data) {
+            scrapeData = data;
+            break;
+          } else {
+            lastError = 'No data returned from scrape';
+            console.error(`Firecrawl returned no data (attempt ${attempt})`);
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              continue;
+            }
+          }
+        }
+      } catch (fetchError) {
+        lastError = fetchError instanceof Error ? fetchError.message : 'Fetch failed';
+        console.error(`Firecrawl fetch error (attempt ${attempt}):`, lastError);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+      }
+    }
+    
+    if (!scrapeData) {
       return new Response(
-        JSON.stringify({ error: 'Não foi possível extrair conteúdo do artigo' }),
+        JSON.stringify({ error: 'Falha ao buscar o artigo após várias tentativas', details: lastError }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
