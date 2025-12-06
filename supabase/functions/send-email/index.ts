@@ -37,7 +37,7 @@ function generateConfirmationEmail(confirmationUrl: string): string {
 <head><meta charset="utf-8"></head>
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
+    <div style="padding:32px 24px;text-align:center;">
       <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">
@@ -64,7 +64,7 @@ function generatePasswordResetEmail(resetUrl: string): string {
 <head><meta charset="utf-8"></head>
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
+    <div style="padding:32px 24px;text-align:center;">
       <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">
@@ -93,7 +93,7 @@ function generateMagicLinkEmail(magicLinkUrl: string, token: string): string {
 <head><meta charset="utf-8"></head>
 <body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;margin:0;padding:20px;">
   <div style="background-color:#ffffff;margin:0 auto;max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);padding:32px 24px;text-align:center;">
+    <div style="padding:32px 24px;text-align:center;">
       <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height:50px;width:auto;">
     </div>
     <div style="padding:40px 32px;">

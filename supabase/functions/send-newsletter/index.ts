@@ -44,7 +44,7 @@ function generateEmailHtml(
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           <!-- Header -->
           <tr>
-            <td style="background-color: #0ea5e9; padding: 24px; text-align: center;">
+            <td style="padding: 24px; text-align: center;">
               <img src="https://qpljdthnqdatcirkudpc.lovableproject.com/logo.png" alt="Universo IT" style="height: 50px; width: auto;">
             </td>
           </tr>
