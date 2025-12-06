@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Loader2, ExternalLink, Check, AlertCircle } from "lucide-react";
+import { Download, Loader2, ExternalLink, Check, AlertCircle, Settings, Eye, EyeOff, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface ImportedArticle {
   id: string;
@@ -37,12 +42,41 @@ interface ImportedArticle {
   created_at: string;
 }
 
+const FIRECRAWL_API_KEY_STORAGE = "firecrawl_api_key";
+
 export default function ContentSources() {
   const [articleUrl, setArticleUrl] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [firecrawlApiKey, setFirecrawlApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Load saved API key on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem(FIRECRAWL_API_KEY_STORAGE);
+    if (savedKey) {
+      setFirecrawlApiKey(savedKey);
+    }
+  }, []);
+
+  const handleSaveApiKey = () => {
+    if (firecrawlApiKey.trim()) {
+      localStorage.setItem(FIRECRAWL_API_KEY_STORAGE, firecrawlApiKey.trim());
+      toast({
+        title: "API Key guardada",
+        description: "A chave Firecrawl foi guardada localmente.",
+      });
+    } else {
+      localStorage.removeItem(FIRECRAWL_API_KEY_STORAGE);
+      toast({
+        title: "API Key removida",
+        description: "A chave Firecrawl foi removida.",
+      });
+    }
+  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -71,8 +105,13 @@ export default function ContentSources() {
 
   const importMutation = useMutation({
     mutationFn: async ({ url, category_id }: { url: string; category_id?: string }) => {
+      const savedApiKey = localStorage.getItem(FIRECRAWL_API_KEY_STORAGE);
       const { data, error } = await supabase.functions.invoke("scrape-content", {
-        body: { article_url: url, category_id: category_id || null },
+        body: { 
+          article_url: url, 
+          category_id: category_id || null,
+          firecrawl_api_key: savedApiKey || undefined
+        },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
@@ -116,6 +155,69 @@ export default function ContentSources() {
             Cole o link de um artigo para importar o conteúdo automaticamente
           </p>
         </div>
+
+        {/* Settings */}
+        <Collapsible open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Configurações
+                  <Badge variant={firecrawlApiKey ? "secondary" : "outline"} className="ml-auto">
+                    {firecrawlApiKey ? "API Configurada" : "Não configurada"}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Configure a API key do Firecrawl para importar artigos
+                </CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firecrawl_key">Firecrawl API Key</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="firecrawl_key"
+                        type={showApiKey ? "text" : "password"}
+                        value={firecrawlApiKey}
+                        onChange={(e) => setFirecrawlApiKey(e.target.value)}
+                        placeholder="fc-xxxxxxxx"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                      >
+                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <Button onClick={handleSaveApiKey}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Obtenha sua API key em{" "}
+                    <a 
+                      href="https://www.firecrawl.dev/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      firecrawl.dev
+                    </a>
+                    . A chave é guardada localmente no seu navegador.
+                  </p>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Import Form */}
         <Card>

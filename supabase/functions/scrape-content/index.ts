@@ -6,13 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+const FIRECRAWL_API_KEY_ENV = Deno.env.get('FIRECRAWL_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 interface ImportRequest {
   article_url: string;
   category_id?: string;
+  firecrawl_api_key?: string; // Optional: passed from frontend
 }
 
 // Convert markdown to simple HTML
@@ -112,16 +113,20 @@ serve(async (req) => {
   }
 
   try {
+    const { article_url, category_id, firecrawl_api_key }: ImportRequest = await req.json();
+    
+    // Use passed API key or fall back to environment variable
+    const FIRECRAWL_API_KEY = firecrawl_api_key || FIRECRAWL_API_KEY_ENV;
+    
     if (!FIRECRAWL_API_KEY) {
       console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'FIRECRAWL_API_KEY não configurada' }),
+        JSON.stringify({ error: 'FIRECRAWL_API_KEY não configurada. Configure nas definições.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { article_url, category_id }: ImportRequest = await req.json();
 
     if (!article_url) {
       return new Response(
