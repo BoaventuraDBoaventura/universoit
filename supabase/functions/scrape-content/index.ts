@@ -10,83 +10,9 @@ const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-interface ScrapeRequest {
-  source_id: string;
-  max_articles?: number;
-}
-
-interface ArticleData {
-  url: string;
-  title: string;
-  excerpt?: string;
-  content?: string;
-  image?: string;
-}
-
-// Patterns that indicate a URL is NOT an article (pagination, categories, etc.)
-const NON_ARTICLE_PATTERNS = [
-  /\/page\/\d+$/i,           // pagination only at end
-  /\/pagina\/\d+$/i,
-  /\/editorias\/?$/i,        // category listings
-  /\/search\/?$/i,
-  /\/pesquisa\/?$/i,
-  /\/contact\/?$/i,
-  /\/contato\/?$/i,
-  /\/about\/?$/i,
-  /\/sobre\/?$/i,
-  /\/privacy\/?$/i,
-  /\/privacidade\/?$/i,
-  /\/terms\/?$/i,
-  /\/termos\/?$/i,
-  /\/login\/?$/i,
-  /\/register\/?$/i,
-  /\/feed\/?$/i,
-  /\/rss\/?$/i,
-  /\/#/,
-  /\.xml$/i,
-  /\.json$/i,
-];
-
-function isArticleUrl(url: string, baseUrl: string): boolean {
-  try {
-    const urlObj = new URL(url);
-    const baseObj = new URL(baseUrl);
-    
-    // Must be from the same domain
-    if (urlObj.hostname !== baseObj.hostname) return false;
-    
-    const path = urlObj.pathname;
-    
-    // Skip homepage
-    if (path === '/' || path === '') return false;
-    
-    // Check against non-article patterns
-    for (const pattern of NON_ARTICLE_PATTERNS) {
-      if (pattern.test(path)) return false;
-    }
-    
-    // Articles typically have dates or slugs in the URL
-    // Accept URLs with date patterns (e.g., /2025/12/06/article-slug)
-    const hasDatePattern = /\/\d{4}\/\d{2}\/\d{2}\//.test(path);
-    
-    // Or URLs that end with a long slug (likely an article)
-    const segments = path.split('/').filter(Boolean);
-    const lastSegment = segments[segments.length - 1] || '';
-    
-    // Article slugs typically:
-    // - Have at least 10 characters (meaningful title)
-    // - Contain hyphens (slug format)
-    // - Are not just numbers
-    const isLikelySlug = lastSegment.length >= 10 && 
-                         lastSegment.includes('-') && 
-                         !/^\d+$/.test(lastSegment);
-    
-    // Accept if has date pattern OR looks like an article slug
-    return hasDatePattern || isLikelySlug;
-    
-  } catch {
-    return false;
-  }
+interface ImportRequest {
+  article_url: string;
+  category_id?: string;
 }
 
 serve(async (req) => {
@@ -98,250 +24,193 @@ serve(async (req) => {
     if (!FIRECRAWL_API_KEY) {
       console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
+        JSON.stringify({ error: 'FIRECRAWL_API_KEY não configurada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { source_id, max_articles = 5 }: ScrapeRequest = await req.json();
+    const { article_url, category_id }: ImportRequest = await req.json();
 
-    console.log(`Starting scrape for source: ${source_id}, max_articles: ${max_articles}`);
-
-    // Get source details
-    const { data: source, error: sourceError } = await supabase
-      .from('content_sources')
-      .select('*, category:categories(id, name)')
-      .eq('id', source_id)
-      .single();
-
-    if (sourceError || !source) {
-      console.error('Source not found:', sourceError);
+    if (!article_url) {
       return new Response(
-        JSON.stringify({ error: 'Source not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'URL do artigo é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Scraping source: ${source.name} - ${source.scrape_url}`);
+    console.log(`Importing article from: ${article_url}`);
 
-    // Step 1: Use Firecrawl to map the page and discover article links
-    const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+    // Check if article was already imported
+    const { data: existingImport } = await supabase
+      .from('imported_articles')
+      .select('id, article_id')
+      .eq('original_url', article_url)
+      .single();
+
+    if (existingImport) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Este artigo já foi importado anteriormente',
+          article_id: existingImport.article_id 
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Scrape the article using Firecrawl
+    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url: source.scrape_url,
-        limit: max_articles * 3, // Get more to filter properly
+        url: article_url,
+        formats: ['markdown', 'html'],
+        onlyMainContent: true,
       }),
     });
 
-    if (!mapResponse.ok) {
-      const errorText = await mapResponse.text();
-      console.error('Firecrawl map error:', errorText);
+    if (!scrapeResponse.ok) {
+      const errorText = await scrapeResponse.text();
+      console.error('Firecrawl error:', errorText);
       return new Response(
-        JSON.stringify({ error: 'Failed to map website', details: errorText }),
+        JSON.stringify({ error: 'Falha ao buscar o artigo', details: errorText }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const mapData = await mapResponse.json();
-    console.log(`Found ${mapData.links?.length || 0} links from map`);
-
-    if (!mapData.success || !mapData.links || mapData.links.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No links found on the page', imported: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Filter to get only article URLs (exclude category, tag, pagination pages)
-    const articleLinks = mapData.links
-      .filter((link: string) => isArticleUrl(link, source.url))
-      .slice(0, max_articles);
-
-    console.log(`Filtered to ${articleLinks.length} potential article links`);
-
-    if (articleLinks.length === 0) {
-      console.log('No valid article links found after filtering');
-      return new Response(
-        JSON.stringify({ message: 'No valid article links found', imported: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get already imported URLs to avoid duplicates
-    const { data: existingImports } = await supabase
-      .from('imported_articles')
-      .select('original_url')
-      .eq('source_id', source_id);
-
-    const importedUrls = new Set(existingImports?.map(i => i.original_url) || []);
-    const newLinks = articleLinks.filter((link: string) => !importedUrls.has(link));
-
-    console.log(`${newLinks.length} new article links to process`);
-
-    if (newLinks.length === 0) {
-      await supabase
-        .from('content_sources')
-        .update({ last_scraped_at: new Date().toISOString() })
-        .eq('id', source_id);
-
-      return new Response(
-        JSON.stringify({ message: 'No new articles found', imported: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Step 2: Scrape each article - focusing ONLY on article content
-    const importedArticles: ArticleData[] = [];
+    const scrapeData = await scrapeResponse.json();
     
-    for (const articleUrl of newLinks.slice(0, max_articles)) {
-      try {
-        console.log(`Scraping article: ${articleUrl}`);
-        
-        // Use onlyMainContent to extract just the article, not navigation/sidebars
-        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: articleUrl,
-            formats: ['markdown', 'html'],
-            onlyMainContent: true, // Extract only the main article content
-            includeTags: ['article', 'main', '.post-content', '.article-content', '.entry-content'],
-            excludeTags: ['nav', 'header', 'footer', 'aside', '.sidebar', '.comments', '.related', '.advertisement', '.ad', '.social-share'],
-          }),
-        });
+    if (!scrapeData.success || !scrapeData.data) {
+      console.error('No data returned from scrape');
+      return new Response(
+        JSON.stringify({ error: 'Não foi possível extrair conteúdo do artigo' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-        if (!scrapeResponse.ok) {
-          console.error(`Failed to scrape ${articleUrl}: ${scrapeResponse.status}`);
-          continue;
+    const { metadata, markdown, html } = scrapeData.data;
+    
+    // Extract article data
+    const rawTitle = metadata?.title || metadata?.ogTitle || 'Artigo Importado';
+    // Clean title - remove site name suffix
+    const title = rawTitle
+      .replace(/\s*[-|•–]\s*[^-|•–]+$/, '')
+      .trim();
+    
+    const description = metadata?.description || metadata?.ogDescription || '';
+    const ogImage = metadata?.ogImage || metadata?.image;
+    
+    // Extract all images from the HTML content
+    const imageRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    const contentImages: string[] = [];
+    let match;
+    
+    if (html) {
+      while ((match = imageRegex.exec(html)) !== null) {
+        const imgSrc = match[1];
+        // Only include absolute URLs that look like content images
+        if (imgSrc.startsWith('http') && 
+            !imgSrc.includes('avatar') && 
+            !imgSrc.includes('logo') &&
+            !imgSrc.includes('icon') &&
+            !imgSrc.includes('tracking')) {
+          contentImages.push(imgSrc);
         }
-
-        const scrapeData = await scrapeResponse.json();
-        
-        if (!scrapeData.success || !scrapeData.data) {
-          console.error(`No data returned for ${articleUrl}`);
-          continue;
-        }
-
-        const { metadata, markdown } = scrapeData.data;
-        
-        // Extract article-specific data from metadata
-        const title = metadata?.title || metadata?.ogTitle || 'Untitled Article';
-        const description = metadata?.description || metadata?.ogDescription || '';
-        const ogImage = metadata?.ogImage || metadata?.image;
-        
-        // Clean up the title (remove site name suffix if present)
-        const cleanTitle = title
-          .replace(/\s*[-|•–]\s*[^-|•–]+$/, '') // Remove " - Site Name" or " | Site Name"
-          .trim();
-
-        // Skip if title looks like a category/listing page
-        if (cleanTitle.toLowerCase().includes('página') || 
-            cleanTitle.toLowerCase().includes('page ') ||
-            cleanTitle.match(/^(categoria|category|tag|arquivo|archive)/i)) {
-          console.log(`Skipping non-article page: ${cleanTitle}`);
-          continue;
-        }
-        
-        // Create a clean excerpt from description (max 300 chars)
-        const excerpt = description
-          .replace(/<[^>]*>/g, '') // Remove any HTML tags
-          .substring(0, 300)
-          .trim();
-
-        // Clean markdown content - remove any remaining navigation/footer text
-        const cleanContent = markdown
-          ? markdown
-              .replace(/^#+\s*(Menu|Navigation|Navegação|Links)[\s\S]*?(?=^#|\n\n)/gmi, '')
-              .replace(/\n{3,}/g, '\n\n')
-              .trim()
-          : description;
-
-        // Create slug from clean title
-        const slug = cleanTitle
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')
-          .substring(0, 100) + '-' + Date.now().toString(36);
-
-        // Create draft article with clean, article-only content
-        const { data: newArticle, error: articleError } = await supabase
-          .from('articles')
-          .insert({
-            title: cleanTitle,
-            slug,
-            excerpt: excerpt || null,
-            content: cleanContent,
-            featured_image: ogImage || null,
-            category_id: source.category_id,
-            source_id: source.id,
-            status: 'draft',
-          })
-          .select()
-          .single();
-
-        if (articleError) {
-          console.error('Error creating article:', articleError);
-          continue;
-        }
-
-        // Record in imported_articles
-        await supabase
-          .from('imported_articles')
-          .insert({
-            source_id: source.id,
-            original_url: articleUrl,
-            original_title: cleanTitle,
-            article_id: newArticle.id,
-            status: 'imported',
-          });
-
-        importedArticles.push({
-          url: articleUrl,
-          title: cleanTitle,
-          excerpt: excerpt,
-          image: ogImage,
-        });
-
-        console.log(`Successfully imported article: ${cleanTitle}`);
-      } catch (err) {
-        console.error(`Error processing ${articleUrl}:`, err);
       }
     }
 
-    // Update source stats
-    await supabase
-      .from('content_sources')
-      .update({
-        last_scraped_at: new Date().toISOString(),
-        articles_imported: source.articles_imported + importedArticles.length,
-      })
-      .eq('id', source_id);
+    console.log(`Found ${contentImages.length} images in article`);
 
-    console.log(`Scraping complete. Imported ${importedArticles.length} articles.`);
+    // Use HTML content but clean it up
+    let articleContent = markdown || description;
+    
+    if (html) {
+      articleContent = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+        .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+        .replace(/class="[^"]*"/gi, '')
+        .replace(/style="[^"]*"/gi, '')
+        .replace(/id="[^"]*"/gi, '')
+        .replace(/data-[^=]*="[^"]*"/gi, '')
+        .trim();
+    }
+
+    // Create excerpt
+    const excerpt = description
+      .replace(/<[^>]*>/g, '')
+      .substring(0, 300)
+      .trim();
+
+    // Create slug
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 100) + '-' + Date.now().toString(36);
+
+    // Create the article as draft
+    const { data: newArticle, error: articleError } = await supabase
+      .from('articles')
+      .insert({
+        title,
+        slug,
+        excerpt: excerpt || null,
+        content: articleContent,
+        featured_image: ogImage || (contentImages.length > 0 ? contentImages[0] : null),
+        category_id: category_id || null,
+        status: 'draft',
+      })
+      .select()
+      .single();
+
+    if (articleError) {
+      console.error('Error creating article:', articleError);
+      return new Response(
+        JSON.stringify({ error: 'Erro ao criar artigo', details: articleError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Record the import
+    await supabase
+      .from('imported_articles')
+      .insert({
+        original_url: article_url,
+        original_title: title,
+        article_id: newArticle.id,
+        status: 'imported',
+      });
+
+    console.log(`Successfully imported: ${title}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        imported: importedArticles.length,
-        articles: importedArticles,
+        article: {
+          id: newArticle.id,
+          title,
+          excerpt,
+          featured_image: ogImage,
+          images_found: contentImages.length,
+          slug: newArticle.slug,
+        },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Scrape error:', error);
+    console.error('Import error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
