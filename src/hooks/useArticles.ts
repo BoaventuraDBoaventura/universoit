@@ -127,7 +127,7 @@ export function useCategories() {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .order("name");
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
       return data;
