@@ -17,12 +17,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Mail } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/useArticles";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function generateSlug(title: string): string {
   return title
@@ -57,6 +68,7 @@ export default function ArticleEditor() {
   });
   
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [sendingNewsletter, setSendingNewsletter] = useState(false);
 
   const { data: article, isLoading } = useQuery({
     queryKey: ["article", id],
@@ -71,6 +83,19 @@ export default function ArticleEditor() {
       return data;
     },
     enabled: !isNew,
+  });
+
+  // Fetch subscriber count
+  const { data: subscriberCount } = useQuery({
+    queryKey: ["subscriber-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("newsletter_subscribers")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+      if (error) throw error;
+      return count || 0;
+    },
   });
 
   // Fetch article tags
@@ -171,6 +196,33 @@ export default function ArticleEditor() {
     },
   });
 
+  const sendNewsletter = async () => {
+    if (!id || isNew) return;
+    
+    setSendingNewsletter(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-newsletter", {
+        body: { articleId: id },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Newsletter enviada!",
+        description: `Email enviado para ${data.sent} subscritores.`,
+      });
+    } catch (error: any) {
+      console.error("Error sending newsletter:", error);
+      toast({
+        title: "Erro ao enviar newsletter",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSendingNewsletter(false);
+    }
+  };
+
   const handleTitleChange = (title: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -189,6 +241,8 @@ export default function ArticleEditor() {
     );
   }
 
+  const canSendNewsletter = !isNew && article?.status === "published" && (subscriberCount || 0) > 0;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -203,16 +257,47 @@ export default function ArticleEditor() {
               </h1>
             </div>
           </div>
-          <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !formData.title}
-          >
-            {saveMutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <div className="flex items-center gap-2">
+            {canSendNewsletter && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" disabled={sendingNewsletter}>
+                    {sendingNewsletter ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
+                    )}
+                    Enviar Newsletter
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Enviar Newsletter</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem a certeza que deseja enviar este artigo para {subscriberCount} subscritores da newsletter?
+                      Esta ação não pode ser revertida.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={sendNewsletter}>
+                      Enviar para {subscriberCount} subscritores
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
-            <Save className="mr-2 h-4 w-4" />
-            Guardar
-          </Button>
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || !formData.title}
+            >
+              {saveMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              <Save className="mr-2 h-4 w-4" />
+              Guardar
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
