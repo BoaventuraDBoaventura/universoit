@@ -13,6 +13,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 interface ImportRequest {
   article_url: string;
   category_id?: string;
+  force_update?: boolean;
 }
 
 // Convert markdown to simple HTML
@@ -121,7 +122,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { article_url, category_id }: ImportRequest = await req.json();
+    const { article_url, category_id, force_update }: ImportRequest = await req.json();
 
     if (!article_url) {
       return new Response(
@@ -130,7 +131,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Importing article from: ${article_url}`);
+    console.log(`Importing article from: ${article_url} (force_update: ${force_update})`);
 
     // Check if article was already imported (and still exists)
     const { data: existingImport } = await supabase
@@ -138,6 +139,8 @@ serve(async (req) => {
       .select('id, article_id')
       .eq('original_url', article_url)
       .maybeSingle();
+
+    let existingArticleId: string | null = null;
 
     if (existingImport && existingImport.article_id) {
       // Check if the article still exists
@@ -148,18 +151,23 @@ serve(async (req) => {
         .maybeSingle();
       
       if (existingArticle) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Este artigo já foi importado anteriormente',
-            article_id: existingImport.article_id 
-          }),
-          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (!force_update) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'Este artigo já foi importado anteriormente',
+              article_id: existingImport.article_id 
+            }),
+            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Will update existing article
+        existingArticleId = existingImport.article_id;
+        console.log(`Will update existing article: ${existingArticleId}`);
       }
     }
     
-    // If there's an orphaned import record, delete it
-    if (existingImport) {
+    // If there's an orphaned import record (no article), delete it
+    if (existingImport && !existingArticleId) {
       await supabase
         .from('imported_articles')
         .delete()
@@ -237,50 +245,82 @@ serve(async (req) => {
       .replace(/^-|-$/g, '')
       .substring(0, 100) + '-' + Date.now().toString(36);
 
-    // Create the article as draft
-    const { data: newArticle, error: articleError } = await supabase
-      .from('articles')
-      .insert({
-        title,
-        slug,
-        excerpt: excerpt || null,
-        content: articleContent,
-        featured_image: ogImage || null,
-        category_id: category_id || null,
-        status: 'draft',
-      })
-      .select()
-      .single();
+    let finalArticle;
 
-    if (articleError) {
-      console.error('Error creating article:', articleError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao criar artigo', details: articleError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (existingArticleId) {
+      // Update existing article
+      const { data: updatedArticle, error: updateError } = await supabase
+        .from('articles')
+        .update({
+          title,
+          excerpt: excerpt || null,
+          content: articleContent,
+          featured_image: ogImage || null,
+          category_id: category_id || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingArticleId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating article:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao atualizar artigo', details: updateError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      finalArticle = updatedArticle;
+      console.log(`Successfully updated: ${title}`);
+    } else {
+      // Create new article as draft
+      const { data: newArticle, error: articleError } = await supabase
+        .from('articles')
+        .insert({
+          title,
+          slug,
+          excerpt: excerpt || null,
+          content: articleContent,
+          featured_image: ogImage || null,
+          category_id: category_id || null,
+          status: 'draft',
+        })
+        .select()
+        .single();
+
+      if (articleError) {
+        console.error('Error creating article:', articleError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao criar artigo', details: articleError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Record the import
+      await supabase
+        .from('imported_articles')
+        .insert({
+          original_url: article_url,
+          original_title: title,
+          article_id: newArticle.id,
+          status: 'imported',
+        });
+
+      finalArticle = newArticle;
+      console.log(`Successfully imported: ${title}`);
     }
-
-    // Record the import
-    await supabase
-      .from('imported_articles')
-      .insert({
-        original_url: article_url,
-        original_title: title,
-        article_id: newArticle.id,
-        status: 'imported',
-      });
-
-    console.log(`Successfully imported: ${title}`);
 
     return new Response(
       JSON.stringify({
         success: true,
+        updated: !!existingArticleId,
         article: {
-          id: newArticle.id,
+          id: finalArticle.id,
           title,
           excerpt,
           featured_image: ogImage,
-          slug: newArticle.slug,
+          slug: finalArticle.slug,
         },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
