@@ -190,7 +190,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           );
 
           const { error: sendError } = await resend.emails.send({
-            from: 'Universo IT <onboarding@resend.dev>',
+            from: 'Universo IT <info@universoit.tech>',
             to: [subscriber.email],
             subject: `Novo artigo: ${typedArticle.title}`,
             html,
