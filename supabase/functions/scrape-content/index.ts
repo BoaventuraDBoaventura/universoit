@@ -31,8 +31,8 @@ function markdownToHtml(markdown: string): string {
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Images - keep them with styling
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-lg max-w-full my-4" />')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    // Links - remove href, keep only the text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Line breaks and paragraphs
     .replace(/\n\n+/g, '</p><p>')
     .replace(/\n/g, '<br />');
