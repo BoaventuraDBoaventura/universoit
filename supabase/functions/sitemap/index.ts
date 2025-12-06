@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
     if (categoriesError) throw categoriesError;
 
-    const baseUrl = req.headers.get("origin") || "https://universoit.pt";
+    const baseUrl = "https://universoit.tech";
 
     // Static pages
     const staticPages = [
