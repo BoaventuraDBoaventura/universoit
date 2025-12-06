@@ -15,7 +15,7 @@ interface ImportRequest {
   category_id?: string;
 }
 
-// Convert markdown to simple HTML - text only, no images or links
+// Convert markdown to HTML - keep images, remove links
 function markdownToHtml(markdown: string): string {
   let html = markdown
     // Headers
@@ -29,9 +29,9 @@ function markdownToHtml(markdown: string): string {
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Remove any remaining images
-    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-    // Remove any remaining links, keep text
+    // Images - KEEP them with styling
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-lg max-w-full my-4" />')
+    // Links - remove href, keep only the text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove raw URLs
     .replace(/https?:\/\/[^\s<>]+/g, '')
@@ -48,6 +48,9 @@ function markdownToHtml(markdown: string): string {
   // Don't wrap headers in paragraphs
   html = html.replace(/<p>(<h[1-6]>)/g, '$1').replace(/(<\/h[1-6]>)<\/p>/g, '$1');
   
+  // Don't wrap images in paragraphs incorrectly
+  html = html.replace(/<p>(<img[^>]+>)<\/p>/g, '$1');
+  
   // Remove empty tags
   html = html.replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '');
   html = html.replace(/(<br\s*\/?>){3,}/g, '<br /><br />');
@@ -55,20 +58,29 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
-// Clean content by removing ALL unwanted sections - keep ONLY article text
+// Clean content - remove unwanted text but KEEP images
 function cleanContent(markdown: string, featuredImage: string | null): string {
   let content = markdown;
   
-  // First, remove ALL images (including featured image in content)
-  content = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '');
+  // Remove the featured image from content if it appears (to avoid duplication)
+  if (featuredImage) {
+    const imageFilename = featuredImage.split('/').pop()?.split('?')[0] || '';
+    if (imageFilename) {
+      const escapedFilename = imageFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      content = content.replace(new RegExp(`!\\[[^\\]]*\\]\\([^)]*${escapedFilename}[^)]*\\)`, 'gi'), '');
+    }
+  }
+  
+  // Remove first image if it's at the very start (usually the featured image)
+  content = content.replace(/^!\[[^\]]*\]\([^)]+\)\s*\n*/i, '');
   
   // Remove ALL links but keep the text inside
   content = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // Remove raw URLs
-  content = content.replace(/https?:\/\/[^\s\)]+/g, '');
+  // Remove raw URLs (but not image URLs which start with !)
+  content = content.replace(/(?<!!)\bhttps?:\/\/[^\s\)]+/g, '');
   
-  // Remove common unwanted patterns
+  // Remove common unwanted patterns - only TEXT, not images
   const patternsToRemove = [
     // Social media and sharing (any format)
     /\b(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|youtube|tiktok|x\.com)\b/gi,
@@ -135,11 +147,15 @@ function cleanContent(markdown: string, featuredImage: string | null): string {
     content = content.replace(pattern, '');
   }
   
-  // Remove lines that are just markdown formatting characters or single words
+  // Remove lines that are just text fragments (not images)
   content = content
     .split('\n')
     .filter(line => {
       const trimmed = line.trim();
+      // Keep image lines
+      if (/^!\[/.test(trimmed)) {
+        return true;
+      }
       // Remove lines that are too short (likely navigation or UI elements)
       if (trimmed.length > 0 && trimmed.length < 5 && !/^[#\-*]/.test(trimmed)) {
         return false;
