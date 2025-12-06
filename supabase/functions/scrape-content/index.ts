@@ -23,6 +23,64 @@ interface ArticleData {
   image?: string;
 }
 
+// Common non-article URL patterns to exclude
+const NON_ARTICLE_PATTERNS = [
+  /\/page\/\d+/i,
+  /\/categoria\//i,
+  /\/category\//i,
+  /\/tag\//i,
+  /\/tema\//i,
+  /\/author\//i,
+  /\/autor\//i,
+  /\/search/i,
+  /\/pesquisa/i,
+  /\/contact/i,
+  /\/contato/i,
+  /\/about/i,
+  /\/sobre/i,
+  /\/privacy/i,
+  /\/privacidade/i,
+  /\/terms/i,
+  /\/termos/i,
+  /\/login/i,
+  /\/register/i,
+  /\/feed/i,
+  /\/rss/i,
+  /\/#/,
+  /\.xml$/i,
+  /\.json$/i,
+];
+
+function isArticleUrl(url: string, baseUrl: string): boolean {
+  // Must be from the same domain
+  try {
+    const urlObj = new URL(url);
+    const baseObj = new URL(baseUrl);
+    if (urlObj.hostname !== baseObj.hostname) return false;
+  } catch {
+    return false;
+  }
+
+  // Check against non-article patterns
+  for (const pattern of NON_ARTICLE_PATTERNS) {
+    if (pattern.test(url)) return false;
+  }
+
+  // Article URLs typically have more path segments and end with a slug
+  const path = new URL(url).pathname;
+  const segments = path.split('/').filter(Boolean);
+  
+  // Most article URLs have at least 1 meaningful segment (the slug)
+  // and don't end with just a number or very short segment
+  if (segments.length === 0) return false;
+  
+  const lastSegment = segments[segments.length - 1];
+  // Article slugs are usually longer than 5 characters
+  if (lastSegment.length < 5) return false;
+  
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -59,7 +117,7 @@ serve(async (req) => {
 
     console.log(`Scraping source: ${source.name} - ${source.scrape_url}`);
 
-    // Step 1: Use Firecrawl to get the page and extract links
+    // Step 1: Use Firecrawl to map the page and discover article links
     const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
       method: 'POST',
       headers: {
@@ -68,7 +126,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         url: source.scrape_url,
-        limit: max_articles * 2, // Get more than needed to filter
+        limit: max_articles * 3, // Get more to filter properly
       }),
     });
 
@@ -82,7 +140,7 @@ serve(async (req) => {
     }
 
     const mapData = await mapResponse.json();
-    console.log(`Found ${mapData.links?.length || 0} links`);
+    console.log(`Found ${mapData.links?.length || 0} links from map`);
 
     if (!mapData.success || !mapData.links || mapData.links.length === 0) {
       return new Response(
@@ -91,16 +149,20 @@ serve(async (req) => {
       );
     }
 
-    // Filter links to get article URLs (exclude home, category, tag pages)
+    // Filter to get only article URLs (exclude category, tag, pagination pages)
     const articleLinks = mapData.links
-      .filter((link: string) => {
-        const url = link.toLowerCase();
-        // Exclude common non-article patterns
-        return !url.endsWith('/') || url.split('/').length > 4;
-      })
+      .filter((link: string) => isArticleUrl(link, source.url))
       .slice(0, max_articles);
 
     console.log(`Filtered to ${articleLinks.length} potential article links`);
+
+    if (articleLinks.length === 0) {
+      console.log('No valid article links found after filtering');
+      return new Response(
+        JSON.stringify({ message: 'No valid article links found', imported: 0 }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get already imported URLs to avoid duplicates
     const { data: existingImports } = await supabase
@@ -111,10 +173,9 @@ serve(async (req) => {
     const importedUrls = new Set(existingImports?.map(i => i.original_url) || []);
     const newLinks = articleLinks.filter((link: string) => !importedUrls.has(link));
 
-    console.log(`${newLinks.length} new links to process`);
+    console.log(`${newLinks.length} new article links to process`);
 
     if (newLinks.length === 0) {
-      // Update last_scraped_at even if no new articles
       await supabase
         .from('content_sources')
         .update({ last_scraped_at: new Date().toISOString() })
@@ -126,13 +187,14 @@ serve(async (req) => {
       );
     }
 
-    // Step 2: Scrape each new article
+    // Step 2: Scrape each article - focusing ONLY on article content
     const importedArticles: ArticleData[] = [];
     
     for (const articleUrl of newLinks.slice(0, max_articles)) {
       try {
         console.log(`Scraping article: ${articleUrl}`);
         
+        // Use onlyMainContent to extract just the article, not navigation/sidebars
         const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
@@ -141,13 +203,15 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             url: articleUrl,
-            formats: ['markdown'],
-            onlyMainContent: true,
+            formats: ['markdown', 'html'],
+            onlyMainContent: true, // Extract only the main article content
+            includeTags: ['article', 'main', '.post-content', '.article-content', '.entry-content'],
+            excludeTags: ['nav', 'header', 'footer', 'aside', '.sidebar', '.comments', '.related', '.advertisement', '.ad', '.social-share'],
           }),
         });
 
         if (!scrapeResponse.ok) {
-          console.error(`Failed to scrape ${articleUrl}`);
+          console.error(`Failed to scrape ${articleUrl}: ${scrapeResponse.status}`);
           continue;
         }
 
@@ -160,13 +224,40 @@ serve(async (req) => {
 
         const { metadata, markdown } = scrapeData.data;
         
-        // Extract article data
-        const title = metadata?.title || 'Untitled Article';
-        const description = metadata?.description || '';
+        // Extract article-specific data from metadata
+        const title = metadata?.title || metadata?.ogTitle || 'Untitled Article';
+        const description = metadata?.description || metadata?.ogDescription || '';
         const ogImage = metadata?.ogImage || metadata?.image;
         
-        // Create slug from title
-        const slug = title
+        // Clean up the title (remove site name suffix if present)
+        const cleanTitle = title
+          .replace(/\s*[-|•–]\s*[^-|•–]+$/, '') // Remove " - Site Name" or " | Site Name"
+          .trim();
+
+        // Skip if title looks like a category/listing page
+        if (cleanTitle.toLowerCase().includes('página') || 
+            cleanTitle.toLowerCase().includes('page ') ||
+            cleanTitle.match(/^(categoria|category|tag|arquivo|archive)/i)) {
+          console.log(`Skipping non-article page: ${cleanTitle}`);
+          continue;
+        }
+        
+        // Create a clean excerpt from description (max 300 chars)
+        const excerpt = description
+          .replace(/<[^>]*>/g, '') // Remove any HTML tags
+          .substring(0, 300)
+          .trim();
+
+        // Clean markdown content - remove any remaining navigation/footer text
+        const cleanContent = markdown
+          ? markdown
+              .replace(/^#+\s*(Menu|Navigation|Navegação|Links)[\s\S]*?(?=^#|\n\n)/gmi, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim()
+          : description;
+
+        // Create slug from clean title
+        const slug = cleanTitle
           .toLowerCase()
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
@@ -174,15 +265,15 @@ serve(async (req) => {
           .replace(/^-|-$/g, '')
           .substring(0, 100) + '-' + Date.now().toString(36);
 
-        // Create draft article
+        // Create draft article with clean, article-only content
         const { data: newArticle, error: articleError } = await supabase
           .from('articles')
           .insert({
-            title,
+            title: cleanTitle,
             slug,
-            excerpt: description.substring(0, 300),
-            content: markdown || description,
-            featured_image: ogImage,
+            excerpt: excerpt || null,
+            content: cleanContent,
+            featured_image: ogImage || null,
             category_id: source.category_id,
             source_id: source.id,
             status: 'draft',
@@ -201,19 +292,19 @@ serve(async (req) => {
           .insert({
             source_id: source.id,
             original_url: articleUrl,
-            original_title: title,
+            original_title: cleanTitle,
             article_id: newArticle.id,
             status: 'imported',
           });
 
         importedArticles.push({
           url: articleUrl,
-          title,
-          excerpt: description,
+          title: cleanTitle,
+          excerpt: excerpt,
           image: ogImage,
         });
 
-        console.log(`Successfully imported: ${title}`);
+        console.log(`Successfully imported article: ${cleanTitle}`);
       } catch (err) {
         console.error(`Error processing ${articleUrl}:`, err);
       }
