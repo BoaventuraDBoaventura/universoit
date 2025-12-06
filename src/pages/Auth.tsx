@@ -130,7 +130,6 @@ export default function Auth() {
             <div className="mx-auto mb-4">
               <img src={logo} alt="Universo IT" className="h-16 w-auto" />
             </div>
-            <CardTitle className="font-display text-2xl">Universo IT</CardTitle>
             <CardDescription>
               Entre na sua conta ou crie uma nova
             </CardDescription>
