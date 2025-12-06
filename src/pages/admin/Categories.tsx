@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -53,11 +53,37 @@ export default function Categories() {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .order("name");
+        .order("display_order", { ascending: true });
       if (error) throw error;
       return data;
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, newOrder }: { id: string; newOrder: number }) => {
+      const { error } = await supabase
+        .from("categories")
+        .update({ display_order: newOrder })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    },
+  });
+
+  const moveCategory = (index: number, direction: "up" | "down") => {
+    if (!categories) return;
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= categories.length) return;
+
+    const currentCategory = categories[index];
+    const swapCategory = categories[newIndex];
+
+    // Swap display_order values
+    reorderMutation.mutate({ id: currentCategory.id, newOrder: swapCategory.display_order ?? newIndex });
+    reorderMutation.mutate({ id: swapCategory.id, newOrder: currentCategory.display_order ?? index });
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data: CategoryForm) => {
@@ -227,6 +253,7 @@ export default function Categories() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-20">Ordem</TableHead>
                 <TableHead>Cor</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Slug</TableHead>
@@ -237,22 +264,44 @@ export default function Categories() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center">
+                  <TableCell colSpan={6} className="py-8 text-center">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : categories?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="py-8 text-center text-muted-foreground"
                   >
                     Nenhuma categoria encontrada
                   </TableCell>
                 </TableRow>
               ) : (
-                categories?.map((category) => (
+                categories?.map((category, index) => (
                   <TableRow key={category.id}>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => moveCategory(index, "up")}
+                          disabled={index === 0 || reorderMutation.isPending}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => moveCategory(index, "down")}
+                          disabled={index === categories.length - 1 || reorderMutation.isPending}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div
                         className="h-6 w-6 rounded-full"
