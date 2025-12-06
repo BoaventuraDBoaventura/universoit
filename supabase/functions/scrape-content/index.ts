@@ -15,53 +15,7 @@ interface ImportRequest {
   category_id?: string;
 }
 
-// Check if URL is a valid content image (not an icon or social media)
-function isValidContentImage(url: string): boolean {
-  if (!url) return false;
-  
-  // Must be a valid http/https URL
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return false;
-  
-  // Skip social media icons and small images
-  const invalidPatterns = [
-    /icon/i,
-    /logo/i,
-    /avatar/i,
-    /favicon/i,
-    /badge/i,
-    /button/i,
-    /social/i,
-    /share/i,
-    /twitter/i,
-    /facebook/i,
-    /instagram/i,
-    /whatsapp/i,
-    /linkedin/i,
-    /youtube/i,
-    /tiktok/i,
-    /telegram/i,
-    /pinterest/i,
-    /x\.com/i,
-    /sprite/i,
-    /1x1/i,
-    /pixel/i,
-    /tracking/i,
-    /ads?[\/\-_]/i,
-    /banner[s]?\//i,
-  ];
-  
-  for (const pattern of invalidPatterns) {
-    if (pattern.test(url)) return false;
-  }
-  
-  // Must have image extension or be from known image CDNs
-  const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url);
-  const isFromImageCDN = /wp-content\/uploads|cdn|img\.|images?\./i.test(url);
-  
-  return hasImageExtension || isFromImageCDN;
-}
-
-// Convert markdown to HTML - keep only valid content images, remove links
+// Convert markdown to simple HTML - text only, no images or links
 function markdownToHtml(markdown: string): string {
   let html = markdown
     // Headers
@@ -75,14 +29,9 @@ function markdownToHtml(markdown: string): string {
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Images - only keep valid content images
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
-      if (isValidContentImage(url)) {
-        return `<img src="${url}" alt="${alt}" class="rounded-lg max-w-full my-4" />`;
-      }
-      return ''; // Remove invalid images
-    })
-    // Links - remove href, keep only the text
+    // Remove any remaining images
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    // Remove any remaining links, keep text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove raw URLs
     .replace(/https?:\/\/[^\s<>]+/g, '')
@@ -99,130 +48,115 @@ function markdownToHtml(markdown: string): string {
   // Don't wrap headers in paragraphs
   html = html.replace(/<p>(<h[1-6]>)/g, '$1').replace(/(<\/h[1-6]>)<\/p>/g, '$1');
   
-  // Don't wrap images in paragraphs incorrectly
-  html = html.replace(/<p>(<img[^>]+>)<\/p>/g, '$1');
-  
-  // Remove empty tags and excessive breaks
+  // Remove empty tags
   html = html.replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '');
   html = html.replace(/(<br\s*\/?>){3,}/g, '<br /><br />');
   
   return html;
 }
 
-// Clean content - remove unwanted text and icons, KEEP valid content images
+// Clean content by removing ALL unwanted sections - keep ONLY article text
 function cleanContent(markdown: string, featuredImage: string | null): string {
   let content = markdown;
   
-  // Remove images that are icons/social/not content (before other processing)
-  content = content.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
-    // Check if this is a valid content image
-    if (isValidContentImage(url)) {
-      // Check if it's the featured image (to avoid duplication)
-      if (featuredImage) {
-        const featuredFilename = featuredImage.split('/').pop()?.split('?')[0] || '';
-        const urlFilename = url.split('/').pop()?.split('?')[0] || '';
-        if (featuredFilename && urlFilename && featuredFilename === urlFilename) {
-          return ''; // Remove featured image from content
-        }
-      }
-      return match; // Keep valid content images
-    }
-    return ''; // Remove invalid images (icons, logos, etc)
-  });
-  
-  // Remove first image if it's at the very start (usually the featured image)
-  content = content.replace(/^!\[[^\]]*\]\([^)]+\)\s*\n*/i, '');
+  // First, remove ALL images (including featured image in content)
+  content = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '');
   
   // Remove ALL links but keep the text inside
   content = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // Remove raw URLs (but not in image markdown)
-  content = content.replace(/(?<![\(\!])\bhttps?:\/\/[^\s\)\]]+/g, '');
+  // Remove raw URLs
+  content = content.replace(/https?:\/\/[^\s\)]+/g, '');
   
-  // Remove common unwanted patterns - only TEXT
+  // Remove common unwanted patterns
   const patternsToRemove = [
-    // Site header/menu items
-    /^(menu|home|início|acesse|entre|sair|login|cadastro|buscar?|pesquisar?)\s*$/gmi,
-    /^(editar perfil|meu .+|minha .+|clube .+|assine|assinatura)\s*$/gmi,
-    
-    // Breadcrumbs
-    /^.+\s*>\s*.+\s*>\s*.+$/gm,
-    /olhar digital\s*>/gi,
-    
-    // Social media and sharing
-    /(compartilh(ar|e)|share)\s*(esta|this)?\s*(matéria|notícia|artigo)?/gi,
-    /siga .+ (no|on) .+/gi,
+    // Social media and sharing (any format)
     /\b(facebook|twitter|linkedin|whatsapp|telegram|instagram|pinterest|youtube|tiktok|x\.com)\b/gi,
+    /(compartilhar?|share|seguir?|follow|curtir|like)\s*(no|on|via)?\s*(facebook|twitter|linkedin|whatsapp|instagram)?/gi,
     
-    // Author bylines (but keep content about the topic)
-    /^[A-Za-zÀ-ú\s]+\d{2}\/\d{2}\/\d{4}\s*$/gm, // "Lucas Soares06/12/2025"
+    // Author/editor/source sections
+    /^(por|by|autor|author|escrito por|written by|fonte|source|créditos?|credits?)\s*:?\s*.+$/gmi,
+    /(foto|imagem|image|photo)\s*:?\s*(reprodução|divulgação|arquivo|getty|shutterstock|unsplash|pixabay).*/gi,
+    /\(?reprodução\)?/gi,
+    /\(?divulgação\)?/gi,
     
     // Newsletter/subscription CTAs
     /(inscreva-se|subscribe|newsletter|cadastre-se|sign up|assine|receba).{0,100}(email|e-mail|grátis|free|notícias)/gi,
-    /conheça o clube/gi,
     
-    // Related articles
-    /^[\-\*]\s*(entenda|saiba|confira|leia|veja).+$/gmi,
+    // Related articles sections
+    /^(leia também|read also|veja também|see also|relacionados|related|confira|saiba mais|leia mais).+$/gmi,
+    /(leia também|veja também|confira também|saiba mais|leia mais)\s*:?/gi,
     
     // Comments sections
-    /(comentários?|comments?|comente|carregar mais)/gi,
-    /cancelar\s*publicar/gi,
+    /^(comentários|comments|deixe .+ comentário|comente).+$/gmi,
     
-    // Copyright and legal
+    // Copyright notices and site info
     /^(©|copyright|\(c\)|todos os direitos|all rights).+$/gmi,
+    /\d{4}\s*[-–]\s*\d{4}.*direitos/gi,
     
-    // Tags/categories labels
-    /^(tags?|categorias?|categories)\s*:.*$/gmi,
+    // Tags and categories labels
+    /^(tags?|categorias?|categories|etiquetas?)\s*:.*$/gmi,
     
-    // Social icon text
-    /ícone\s*(do|da|de)?\s*(facebook|twitter|x|instagram|whatsapp|email|linkedin)/gi,
+    // Navigation breadcrumbs and menus
+    /^(home|início|menu|navegação)\s*[>\/].+$/gmi,
     
-    // Empty brackets
+    // Social icons text (common icon labels)
+    /\b(fb|tw|ig|yt|li|pin)\b/gi,
+    
+    // Empty brackets/links
     /\[\s*\]/g,
     /\(\s*\)/g,
-    /\(\s*:\/?\/?\/?[^)]*\)/g, // (://?...)
     
-    // Editor info
-    /^(redação|editorial|editor\(a\))\s*$/gmi,
-    /lucas soares.*jornalista.*/gi,
+    // Edition info
+    /(edição|edition|editado por|edited by)\s*:?\s*.*/gi,
     
-    // Footer garbage
-    /\[uol tag.*/gi,
-    /mercúrio/gi,
-    /clean expired cookie/gi,
+    // Time stamps at weird places
+    /\b\d{1,2}[h:]\d{2}\s*(min)?\.?\s*$/gm,
+    
+    // Site names and footers (common patterns)
+    /publicado\s+(em|por|via)\s+.+$/gmi,
+    /atualizado\s+(em|há)\s+.+$/gmi,
+    
+    // Ad/banner placeholders
+    /(anúncio|publicidade|advertisement|sponsored|patrocinado)/gi,
+    
+    // Rating/review widgets
+    /\d+\s*(estrelas?|stars?|votos?|votes?)/gi,
+    
+    // Print/share buttons text
+    /(imprimir|print|enviar|send|salvar|save)\s*(artigo|matéria|notícia)?/gi,
+    
+    // More patterns for editorial info
+    /^(redação|editorial|edição)\b.*$/gmi,
+    /^(publicado|postado|criado)\s+.+$/gmi,
   ];
   
   for (const pattern of patternsToRemove) {
     content = content.replace(pattern, '');
   }
   
-  // Remove lines that are navigation, UI or very short fragments
+  // Remove lines that are just markdown formatting characters or single words
   content = content
     .split('\n')
     .filter(line => {
       const trimmed = line.trim();
-      if (!trimmed) return false;
-      
-      // Keep image lines (they'll be validated in markdownToHtml)
-      if (/^!\[/.test(trimmed)) return true;
-      
-      // Keep headers
-      if (/^#{1,6}\s+/.test(trimmed)) return true;
-      
-      // Remove lines that are too short (likely navigation)
-      if (trimmed.length < 10 && !/^[\-\*]/.test(trimmed)) return false;
-      
-      // Remove lines that are just symbols or dates
-      if (/^[*\-_=|:\s]+$/.test(trimmed)) return false;
-      if (/^\d{2}\/\d{2}\/\d{4}\s*$/.test(trimmed)) return false;
-      
+      // Remove lines that are too short (likely navigation or UI elements)
+      if (trimmed.length > 0 && trimmed.length < 5 && !/^[#\-*]/.test(trimmed)) {
+        return false;
+      }
+      // Remove lines that are just symbols
+      if (/^[*\-_=|]+$/.test(trimmed)) {
+        return false;
+      }
       return true;
     })
     .join('\n');
   
   // Clean up excessive whitespace
   content = content
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\s+/gm, '') // Remove leading whitespace from lines
+    .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive line breaks
+    .replace(/^\s*\n/gm, '\n') // Remove blank lines at start
     .trim();
   
   return content;
@@ -288,65 +222,35 @@ serve(async (req) => {
         .eq('id', existingImport.id);
     }
 
-    // Scrape the article using Firecrawl with retry logic
-    const maxRetries = 3;
-    let scrapeData = null;
-    let lastError = '';
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      console.log(`Firecrawl attempt ${attempt}/${maxRetries}`);
-      
-      try {
-        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: article_url,
-            formats: ['markdown'],
-            onlyMainContent: true,
-          }),
-        });
+    // Scrape the article using Firecrawl - request only markdown for cleaner content
+    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: article_url,
+        formats: ['markdown'],
+        onlyMainContent: true,
+      }),
+    });
 
-        if (!scrapeResponse.ok) {
-          lastError = await scrapeResponse.text();
-          console.error(`Firecrawl error (attempt ${attempt}):`, lastError);
-          
-          // If it's a temporary error, wait and retry
-          if (attempt < maxRetries && (lastError.includes('Redis') || lastError.includes('Internal server error'))) {
-            console.log(`Waiting 2 seconds before retry...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            continue;
-          }
-        } else {
-          const data = await scrapeResponse.json();
-          if (data.success && data.data) {
-            scrapeData = data;
-            break;
-          } else {
-            lastError = 'No data returned from scrape';
-            console.error(`Firecrawl returned no data (attempt ${attempt})`);
-            if (attempt < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              continue;
-            }
-          }
-        }
-      } catch (fetchError) {
-        lastError = fetchError instanceof Error ? fetchError.message : 'Fetch failed';
-        console.error(`Firecrawl fetch error (attempt ${attempt}):`, lastError);
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          continue;
-        }
-      }
-    }
-    
-    if (!scrapeData) {
+    if (!scrapeResponse.ok) {
+      const errorText = await scrapeResponse.text();
+      console.error('Firecrawl error:', errorText);
       return new Response(
-        JSON.stringify({ error: 'Falha ao buscar o artigo após várias tentativas', details: lastError }),
+        JSON.stringify({ error: 'Falha ao buscar o artigo', details: errorText }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const scrapeData = await scrapeResponse.json();
+    
+    if (!scrapeData.success || !scrapeData.data) {
+      console.error('No data returned from scrape');
+      return new Response(
+        JSON.stringify({ error: 'Não foi possível extrair conteúdo do artigo' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
