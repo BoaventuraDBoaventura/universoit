@@ -31,6 +31,8 @@ export function Header() {
           <img 
             src={universoItLogo} 
             alt="Universo IT" 
+            width={160}
+            height={25}
             className="h-7 w-auto sm:h-9 md:h-10"
           />
         </Link>
@@ -73,7 +75,7 @@ export function Header() {
                   <Link to="/admin">Painel</Link>
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={() => signOut()}>
+              <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Terminar sessão">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -89,6 +91,7 @@ export function Header() {
             size="icon"
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>

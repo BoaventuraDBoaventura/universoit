@@ -33,7 +33,7 @@ export default function Home() {
             <div className="grid gap-4 lg:grid-cols-3">
               {mainFeatured && (
                 <div className="lg:col-span-2">
-                  <ArticleCard article={mainFeatured} variant="featured" />
+                  <ArticleCard article={mainFeatured} variant="featured" priority />
                 </div>
               )}
               {sideFeatured && sideFeatured.length > 0 && (
@@ -48,6 +48,10 @@ export default function Home() {
                         <img
                           src={article.featured_image || "/placeholder.svg"}
                           alt={article.title}
+                          width={400}
+                          height={225}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
