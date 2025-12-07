@@ -10,6 +10,9 @@
     <link rel="dns-prefetch" href="https://qpljdthnqdatcirkudpc.supabase.co" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload critical fonts with display=swap -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" /></noscript>
     
     <!-- Google Consent Mode v2 - Must be before AdSense -->
     <script>
@@ -24,8 +27,18 @@
       });
     </script>
     <meta name="google-adsense-account" content="ca-pub-6473415273056607">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6473415273056607"
-     crossorigin="anonymous"></script>
+    <!-- Defer AdSense loading for better performance -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var script = document.createElement('script');
+          script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6473415273056607';
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          document.head.appendChild(script);
+        }, 2000);
+      });
+    </script>
     <title>Universo IT - Notícias de Tecnologia e Inovação</title>
     <meta name="description" content="Universo IT - O seu portal de notícias sobre tecnologia, inovação, inteligência artificial e o futuro digital." />
     <meta name="author" content="Universo IT" />

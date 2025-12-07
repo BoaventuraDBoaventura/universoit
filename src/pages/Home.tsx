@@ -16,8 +16,8 @@ export default function Home() {
 
   return (
     <PublicLayout>
-      {/* Hero Section */}
-      <section className="gradient-hero py-8">
+      {/* Hero Section - min-height to prevent CLS */}
+      <section className="gradient-hero py-8 min-h-[400px] lg:min-h-[450px]">
         <div className="container">
           {loadingFeatured ? (
             <div className="grid gap-4 lg:grid-cols-3">
@@ -42,19 +42,17 @@ export default function Home() {
                     <Link
                       key={article.id}
                       to={`/artigo/${article.slug}`}
-                      className="group relative block overflow-hidden rounded-xl"
+                      className="group relative block overflow-hidden rounded-xl aspect-[16/9]"
                     >
-                      <div className="aspect-[16/9] overflow-hidden">
-                        <img
-                          src={article.featured_image || "/placeholder.svg"}
-                          alt={article.title}
-                          width={400}
-                          height={225}
-                          loading="lazy"
-                          decoding="async"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
+                      <img
+                        src={article.featured_image || "/placeholder.svg"}
+                        alt={article.title}
+                        width={400}
+                        height={225}
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-4">
                         <h3 className="font-display font-semibold text-primary-foreground line-clamp-2">
@@ -70,12 +68,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Nav */}
-      {categories && categories.length > 0 && (
-        <section className="border-b border-border bg-card py-4">
-          <div className="container">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.map((category) => (
+      {/* Categories Nav - fixed height to prevent CLS */}
+      <section className="border-b border-border bg-card py-4 min-h-[56px]">
+        <div className="container">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {categories && categories.length > 0 ? (
+              categories.map((category) => (
                 <Link
                   key={category.id}
                   to={`/categoria/${category.slug}`}
@@ -87,11 +85,18 @@ export default function Home() {
                 >
                   {category.name}
                 </Link>
-              ))}
-            </div>
+              ))
+            ) : (
+              <>
+                <Skeleton className="h-9 w-24 rounded-full" />
+                <Skeleton className="h-9 w-20 rounded-full" />
+                <Skeleton className="h-9 w-28 rounded-full" />
+                <Skeleton className="h-9 w-24 rounded-full" />
+              </>
+            )}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Latest Articles */}
       <section className="py-12">
