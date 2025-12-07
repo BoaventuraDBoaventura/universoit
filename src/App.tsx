@@ -19,6 +19,7 @@ import TermsOfUse from "./pages/TermsOfUse";
 import Contact from "./pages/Contact";
 import AllArticles from "./pages/AllArticles";
 import Unsubscribe from "./pages/Unsubscribe";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/contacto" element={<Contact />} />
               <Route path="/todas" element={<AllArticles />} />
               <Route path="/cancelar-subscricao" element={<Unsubscribe />} />
+              <Route path="/sobre" element={<About />} />
               
 {/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
