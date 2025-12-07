@@ -72,6 +72,21 @@ export default function Contact() {
         variant: "destructive",
       });
     } else {
+      // Send email notification
+      try {
+        await supabase.functions.invoke("notify-contact", {
+          body: {
+            name: result.data.name,
+            email: result.data.email,
+            subject: result.data.subject,
+            message: result.data.message,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send email notification:", emailError);
+        // Don't show error to user, message was saved successfully
+      }
+
       toast({
         title: "Mensagem enviada!",
         description: "Obrigado pelo seu contacto. Responderemos em breve.",
