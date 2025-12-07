@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, MapPin, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -103,14 +103,21 @@ export default function Contact() {
                     <Mail className="mt-0.5 h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Email</p>
-                      <p className="text-sm text-muted-foreground">contacto@universoit.pt</p>
+                      <p className="text-sm text-muted-foreground">contacto@universoit.tech</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone className="mt-0.5 h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Telefone</p>
+                      <p className="text-sm text-muted-foreground">+258 84 600 4801</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Localização</p>
-                      <p className="text-sm text-muted-foreground">Portugal</p>
+                      <p className="text-sm text-muted-foreground">Moçambique</p>
                     </div>
                   </div>
                 </div>
