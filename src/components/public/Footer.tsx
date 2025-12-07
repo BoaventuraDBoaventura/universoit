@@ -7,11 +7,13 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SmartAdBanner } from "./SmartAdBanner";
+import { useCategories } from "@/hooks/useArticles";
 
 export function Footer() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { data: categories } = useCategories();
 
   const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,18 +74,15 @@ export function Footer() {
           <div>
             <h3 className="mb-4 font-display font-semibold">Categorias</h3>
             <nav className="flex flex-col gap-2">
-              <Link to="/categoria/inteligencia-artificial" className="text-sm text-muted-foreground hover:text-foreground">
-                Inteligência Artificial
-              </Link>
-              <Link to="/categoria/smartphones" className="text-sm text-muted-foreground hover:text-foreground">
-                Smartphones
-              </Link>
-              <Link to="/categoria/gaming" className="text-sm text-muted-foreground hover:text-foreground">
-                Gaming
-              </Link>
-              <Link to="/categoria/software" className="text-sm text-muted-foreground hover:text-foreground">
-                Software
-              </Link>
+              {categories?.slice(0, 6).map((category) => (
+                <Link 
+                  key={category.id}
+                  to={`/categoria/${category.slug}`} 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </nav>
           </div>
 
