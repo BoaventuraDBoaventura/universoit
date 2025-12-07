@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.scrape-content]
 verify_jwt = false
+
+[functions.notify-contact]
+verify_jwt = false
