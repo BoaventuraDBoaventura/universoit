@@ -62,6 +62,8 @@ export function Footer() {
               <img 
                 src={universoItLogo} 
                 alt="Universo IT" 
+                width={160}
+                height={25}
                 className="h-8 w-auto sm:h-10"
               />
             </Link>

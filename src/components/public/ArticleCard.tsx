@@ -9,9 +9,10 @@ import { pt } from "date-fns/locale";
 interface ArticleCardProps {
   article: Article;
   variant?: "default" | "featured" | "compact";
+  priority?: boolean;
 }
 
-export function ArticleCard({ article, variant = "default" }: ArticleCardProps) {
+export function ArticleCard({ article, variant = "default", priority = false }: ArticleCardProps) {
   const timeAgo = article.published_at
     ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: pt })
     : "";
@@ -26,6 +27,9 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
           <LazyImage
             src={article.featured_image || "/placeholder.svg"}
             alt={article.title}
+            width={800}
+            height={450}
+            priority={priority}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
@@ -74,6 +78,8 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
           <LazyImage
             src={article.featured_image || "/placeholder.svg"}
             alt={article.title}
+            width={112}
+            height={80}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
@@ -96,6 +102,8 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
         <LazyImage
           src={article.featured_image || "/placeholder.svg"}
           alt={article.title}
+          width={400}
+          height={250}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
