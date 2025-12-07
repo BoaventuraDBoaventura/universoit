@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" fill="none">
+  <defs>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e5bbd"/>
+      <stop offset="100%" style="stop-color:#0a1f4d"/>
+    </linearGradient>
+    <linearGradient id="globeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a90d9"/>
+      <stop offset="50%" style="stop-color:#1e5bbd"/>
+      <stop offset="100%" style="stop-color:#0a1f4d"/>
+    </linearGradient>
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7ab8f5;stop-opacity:0.3"/>
+      <stop offset="50%" style="stop-color:#7ab8f5"/>
+      <stop offset="100%" style="stop-color:#7ab8f5;stop-opacity:0.3"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- UNIVERSO text -->
+  <text x="0" y="150" font-family="Arial Black, Arial, sans-serif" font-size="165" font-weight="900" fill="url(#textGradient)">UNIVERS</text>
+  
+  <!-- Globe (O) -->
+  <g transform="translate(815, 100)">
+    <!-- Main globe circle -->
+    <circle cx="0" cy="0" r="75" fill="url(#globeGradient)"/>
+    
+    <!-- Globe shine -->
+    <ellipse cx="-25" cy="-30" rx="25" ry="20" fill="rgba(255,255,255,0.3)"/>
+    
+    <!-- Ring around globe -->
+    <ellipse cx="0" cy="0" rx="95" ry="25" fill="none" stroke="url(#ringGradient)" stroke-width="3" transform="rotate(-20)"/>
+  </g>
+  
+  <!-- IT text -->
+  <text x="920" y="150" font-family="Arial Black, Arial, sans-serif" font-size="165" font-weight="900" fill="url(#textGradient)">IT</text>
+</svg>
