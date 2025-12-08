@@ -23,14 +23,14 @@ export function ArticleCard({ article, variant = "default", priority = false }: 
         to={`/artigo/${article.slug}`}
         className="group relative block overflow-hidden rounded-xl"
       >
-        <div className="aspect-[16/9] overflow-hidden">
+        <div className="aspect-[4/3] md:aspect-[16/9] overflow-hidden">
           <LazyImage
             src={article.featured_image || "/placeholder.svg"}
             alt={article.title}
             width={800}
             height={450}
             priority={priority}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/40 to-transparent" />
