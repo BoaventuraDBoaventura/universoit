@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 // Public pages
 import Home from "./pages/Home";
@@ -46,6 +47,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
@@ -63,7 +65,7 @@ const App = () => (
               <Route path="/sobre" element={<About />} />
               <Route path="/newsletter" element={<Newsletter />} />
               
-{/* Admin Routes */}
+              {/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
               <Route path="/admin/artigos" element={<Articles />} />
               <Route path="/admin/artigos/:id" element={<ArticleEditor />} />
