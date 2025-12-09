@@ -98,6 +98,9 @@ export function Footer() {
               <Link to="/contacto" className="text-sm text-muted-foreground hover:text-foreground">
                 Contacto
               </Link>
+              <Link to="/newsletter" className="text-sm text-muted-foreground hover:text-foreground">
+                Newsletter
+              </Link>
               <Link to="/politica-de-privacidade" className="text-sm text-muted-foreground hover:text-foreground">
                 Política de Privacidade
               </Link>
