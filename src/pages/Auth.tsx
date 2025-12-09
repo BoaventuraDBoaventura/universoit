@@ -202,9 +202,6 @@ export default function Auth() {
           </CardContent>
         </Card>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Pode desativar "Confirm email" nas configurações do Supabase para testar mais rapidamente.
-        </p>
       </div>
     </div>
   );
