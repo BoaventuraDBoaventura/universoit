@@ -21,6 +21,7 @@ import AllArticles from "./pages/AllArticles";
 import Unsubscribe from "./pages/Unsubscribe";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import Newsletter from "./pages/Newsletter";
 
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -29,7 +30,7 @@ import ArticleEditor from "./pages/admin/ArticleEditor";
 import Categories from "./pages/admin/Categories";
 import Tags from "./pages/admin/Tags";
 import Comments from "./pages/admin/Comments";
-import Newsletter from "./pages/admin/Newsletter";
+import AdminNewsletter from "./pages/admin/Newsletter";
 import Advertisements from "./pages/admin/Advertisements";
 import AdStatistics from "./pages/admin/AdStatistics";
 import Users from "./pages/admin/Users";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/todas" element={<AllArticles />} />
               <Route path="/cancelar-subscricao" element={<Unsubscribe />} />
               <Route path="/sobre" element={<About />} />
+              <Route path="/newsletter" element={<Newsletter />} />
               
 {/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
@@ -69,7 +71,7 @@ const App = () => (
               <Route path="/admin/categorias" element={<Categories />} />
               <Route path="/admin/tags" element={<Tags />} />
               <Route path="/admin/comentarios" element={<Comments />} />
-              <Route path="/admin/newsletter" element={<Newsletter />} />
+              <Route path="/admin/newsletter" element={<AdminNewsletter />} />
               <Route path="/admin/anuncios" element={<Advertisements />} />
               <Route path="/admin/anuncios/estatisticas" element={<AdStatistics />} />
               <Route path="/admin/utilizadores" element={<Users />} />
