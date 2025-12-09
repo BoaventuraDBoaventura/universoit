@@ -1,18 +1,35 @@
+import { useState } from "react";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { ArticleCard } from "@/components/public/ArticleCard";
-import { usePublishedArticles, useFeaturedArticles, useCategories } from "@/hooks/useArticles";
+import { useFeaturedArticles, useCategories } from "@/hooks/useArticles";
+import { usePaginatedArticles } from "@/hooks/usePaginatedArticles";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function Home() {
+  const [currentPage, setCurrentPage] = useState(1);
   const { data: featuredArticles, isLoading: loadingFeatured } = useFeaturedArticles();
-  const { data: articles, isLoading: loadingArticles } = usePublishedArticles(12);
+  const { data: paginatedData, isLoading: loadingArticles } = usePaginatedArticles(currentPage, 6);
   const { data: categories } = useCategories();
 
   const mainFeatured = featuredArticles?.[0];
   const sideFeatured = featuredArticles?.slice(1, 3);
-  const regularArticles = articles?.filter((a) => !a.is_featured) || [];
+  const regularArticles = paginatedData?.articles || [];
+  const totalPages = paginatedData?.totalPages || 1;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <PublicLayout>
@@ -124,11 +141,72 @@ export default function Home() {
               ))}
             </div>
           ) : regularArticles.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {regularArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {regularArticles.map((article) => (
+                  <ArticleCard key={article.id} article={article} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-12">
+                  <Pagination>
+                    <PaginationContent>
+                      {currentPage > 1 && (
+                        <PaginationItem>
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(currentPage - 1);
+                            }}
+                          />
+                        </PaginationItem>
+                      )}
+                      
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        // Show first, last, current, and adjacent pages
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                href="#"
+                                isActive={page === currentPage}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePageChange(page);
+                                }}
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {currentPage < totalPages && (
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(currentPage + 1);
+                            }}
+                          />
+                        </PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           ) : (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <p className="text-muted-foreground">
