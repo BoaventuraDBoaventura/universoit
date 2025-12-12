@@ -37,7 +37,10 @@ Deno.serve(async (req) => {
     // Static pages
     const staticPages = [
       { loc: "/", priority: "1.0", changefreq: "daily" },
+      { loc: "/todas", priority: "0.9", changefreq: "daily" },
       { loc: "/pesquisa", priority: "0.6", changefreq: "monthly" },
+      { loc: "/newsletter", priority: "0.6", changefreq: "monthly" },
+      { loc: "/sobre", priority: "0.5", changefreq: "monthly" },
       { loc: "/contacto", priority: "0.5", changefreq: "monthly" },
       { loc: "/termos-de-uso", priority: "0.3", changefreq: "yearly" },
       { loc: "/politica-de-privacidade", priority: "0.3", changefreq: "yearly" },
