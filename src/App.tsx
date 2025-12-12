@@ -23,6 +23,7 @@ import Unsubscribe from "./pages/Unsubscribe";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Newsletter from "./pages/Newsletter";
+import Sitemap from "./pages/Sitemap";
 
 // Admin pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/cancelar-subscricao" element={<Unsubscribe />} />
               <Route path="/sobre" element={<About />} />
               <Route path="/newsletter" element={<Newsletter />} />
+              <Route path="/sitemap.xml" element={<Sitemap />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<Dashboard />} />
