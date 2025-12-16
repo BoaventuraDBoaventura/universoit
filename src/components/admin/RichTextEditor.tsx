@@ -23,8 +23,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 
 interface RichTextEditorProps {
   value: string;
@@ -39,6 +48,10 @@ export function RichTextEditor({
   placeholder = "Escreva o conteúdo do artigo...",
   className,
 }: RichTextEditorProps) {
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageCaption, setImageCaption] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -88,13 +101,28 @@ export function RichTextEditor({
     }
   }, [editor]);
 
-  const addImage = useCallback(() => {
-    if (!editor) return;
-    const url = window.prompt("URL da imagem:");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+  const openImageDialog = useCallback(() => {
+    setImageUrl("");
+    setImageCaption("");
+    setImageDialogOpen(true);
+  }, []);
+
+  const insertImage = useCallback(() => {
+    if (!editor || !imageUrl) return;
+    
+    if (imageCaption) {
+      // Insert figure with caption
+      const figureHtml = `<figure class="my-4"><img src="${imageUrl}" alt="${imageCaption}" class="rounded-lg max-w-full" /><figcaption class="text-center text-sm text-muted-foreground mt-2 italic">${imageCaption}</figcaption></figure>`;
+      editor.chain().focus().insertContent(figureHtml).run();
+    } else {
+      // Insert just the image
+      editor.chain().focus().setImage({ src: imageUrl }).run();
     }
-  }, [editor]);
+    
+    setImageDialogOpen(false);
+    setImageUrl("");
+    setImageCaption("");
+  }, [editor, imageUrl, imageCaption]);
 
   if (!editor) {
     return null;
@@ -202,7 +230,7 @@ export function RichTextEditor({
         >
           <LinkIcon className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={addImage}>
+        <Button type="button" variant="ghost" size="sm" onClick={openImageDialog}>
           <ImageIcon className="h-4 w-4" />
         </Button>
         <Button
@@ -239,6 +267,43 @@ export function RichTextEditor({
 
       {/* Editor */}
       <EditorContent editor={editor} />
+
+      {/* Image Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inserir Imagem</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="image-url">URL da Imagem</Label>
+              <Input
+                id="image-url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://exemplo.com/imagem.jpg"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image-caption">Legenda (opcional)</Label>
+              <Input
+                id="image-caption"
+                value={imageCaption}
+                onChange={(e) => setImageCaption(e.target.value)}
+                placeholder="Descrição ou créditos da imagem..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={insertImage} disabled={!imageUrl}>
+              Inserir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
