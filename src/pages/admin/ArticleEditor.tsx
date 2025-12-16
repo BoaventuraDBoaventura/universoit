@@ -61,6 +61,7 @@ export default function ArticleEditor() {
     excerpt: "",
     content: "",
     featured_image: "",
+    featured_image_caption: "",
     category_id: "",
     status: "draft" as "draft" | "published" | "scheduled" | "archived",
     is_featured: false,
@@ -121,6 +122,7 @@ export default function ArticleEditor() {
         excerpt: article.excerpt || "",
         content: article.content || "",
         featured_image: article.featured_image || "",
+        featured_image_caption: (article as any).featured_image_caption || "",
         category_id: article.category_id || "",
         status: article.status,
         is_featured: article.is_featured || false,
@@ -450,13 +452,24 @@ export default function ArticleEditor() {
               <CardHeader>
                 <CardTitle>Imagem de Capa</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <ImageUpload
                   value={formData.featured_image}
                   onChange={(url) =>
                     setFormData((prev) => ({ ...prev, featured_image: url }))
                   }
                 />
+                <div className="space-y-2">
+                  <Label htmlFor="image-caption">Legenda da Imagem</Label>
+                  <Input
+                    id="image-caption"
+                    value={formData.featured_image_caption}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, featured_image_caption: e.target.value }))
+                    }
+                    placeholder="Descrição ou créditos da imagem..."
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
