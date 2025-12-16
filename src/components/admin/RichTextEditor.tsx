@@ -196,7 +196,7 @@ export function RichTextEditor({
     if (!editor || !imageUrl) return;
     
     if (imageCaption) {
-      const figureHtml = `<figure class="my-4"><img src="${imageUrl}" alt="${imageCaption}" class="rounded-lg max-w-full" /><figcaption class="text-center text-sm text-muted-foreground mt-2 italic">${imageCaption}</figcaption></figure>`;
+      const figureHtml = `<figure style="margin: 1rem 0; text-align: center;"><img src="${imageUrl}" alt="${imageCaption}" style="border-radius: 0.5rem; max-width: 100%; display: inline-block;" /><figcaption style="text-align: center; font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem; font-style: italic;">${imageCaption}</figcaption></figure>`;
       editor.chain().focus().insertContent(figureHtml).run();
     } else {
       editor.chain().focus().setImage({ src: imageUrl }).run();
