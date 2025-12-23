@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  universoit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: universoit-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - proxy-network
+
+networks:
+  proxy-network:
+    external: true
